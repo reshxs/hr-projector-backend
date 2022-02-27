@@ -1,0 +1,11 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:14.2
+    environment:
+      POSTGRES_DB: hr_projector
+      POSTGRES_USER: hr_projector
+      POSTGRES_PASSWORD: hr_projector
+    ports:
+      - "5432:5432"
