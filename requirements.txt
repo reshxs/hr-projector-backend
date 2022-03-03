@@ -1,7 +1,0 @@
-Django~=4.0.2
-click~=8.0.4
-uvicorn~=0.17.5
-fastapi~=0.74.1
-starlette~=0.17.1
-simplejson~=3.17.6
-pytest~=7.0.1

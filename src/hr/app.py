@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -15,8 +14,6 @@ from hr.api.web import api_v1 as web_api_v1
 
 logger = logging.getLogger(__name__)
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-
 
 class DjangoThreadPoolExecutor(ThreadPoolExecutor):
     def submit(self, fn, *args, **kwargs):
@@ -28,22 +25,22 @@ class DjangoThreadPoolExecutor(ThreadPoolExecutor):
         return super().submit(func)
 
 
+default_executor = DjangoThreadPoolExecutor(max_workers=settings.THREADS)
+
+
 app = fastapi_jsonrpc.API(
     title='HR PROJECTOR',
-    version='1.0.0',
+    version=settings.VERSION,
     description='Тут будет описание',
 )
 
 app.bind_entrypoint(web_api_v1)
 
 
-default_executor = DjangoThreadPoolExecutor(max_workers=4)  # TODO: add to settings
-
-
 @app.on_event('startup')
 async def on_startup():
     loop = asyncio.get_running_loop()
-    logger.info('Setup ThreadPoolExecutor: max_workers=%s', 4)
+    logger.info('Setup ThreadPoolExecutor: max_workers=%s', settings.THREADS)
     loop.set_default_executor(default_executor)
 
 
@@ -55,6 +52,6 @@ app.mount(
 )
 
 
-@app.get('/')
+@app.get('/', include_in_schema=False)
 def redirect_to_docs() -> RedirectResponse:
     return RedirectResponse('/docs')

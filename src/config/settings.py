@@ -9,26 +9,53 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+import dotenv
 import typing as tp
 
 from pathlib import Path
+from pydantic import BaseSettings
+from pydantic import SecretStr
 
+
+class _Settings(BaseSettings):
+    SECRET_KEY: SecretStr = 'DEVKEY'
+    DEBUG: bool = True
+    VERSION: str = 'unknown'
+    THREADS: int = 4
+    LOG_LEVEL: str = 'DEBUG'
+
+    PORT: int = 8000
+    HOST: str = '0.0.0.0'
+
+    DB_HOST: str = 'localhost'
+    DB_PORT: int = 5432
+    DB_NAME: str = 'hr-projector'
+    DB_USER: str = 'hr-projector'
+    DB_PASSWORD: str = 'hr-projector'
+
+    class Config:
+        env_file = dotenv.find_dotenv('.env') or '.env'
+        env_file_encoding = 'utf-8'
+
+
+_settings = _Settings()
+
+for _name in _settings.__fields__:
+    globals()[_name] = getattr(_settings, _name)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9$q5@@@1e8j5)ti)c==@bsyn-l1e2sebp75mfbkc32ryu%cu*v'
+SECRET_KEY = _settings.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _settings.DEBUG
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -72,24 +99,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hr_projector',
-        'USER': 'hr_projector',
-        'PASSWORD': 'hr_projector',
-        'HOST': 'localhost',
-        'PORT': 5432,
+        'NAME': _settings.DB_NAME,
+        'USER': _settings.DB_USER,
+        'PASSWORD': _settings.DB_PASSWORD,
+        'HOST': _settings.DB_HOST,
+        'PORT': _settings.DB_PORT,
         'OPTIONS': {
-            'application_name': 'hr_projector',
+            'application_name': _settings.DB_USER,
         }
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -109,7 +134,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
@@ -121,12 +145,55 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = '/static/'
 STATIC_ROOT = Path(BASE_DIR, 'staticfiles')
+
+LOGGING = {
+    'version': 1,
+    'disable_existed_loggers': False,
+    'handlers': {
+        'null': {
+            'level': 'DEBUG',
+            'class': 'logging.NullHandler',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': _settings.LOG_LEVEL,
+            'propagate': False,
+        },
+        'uvicorn': {
+            'level': 'INFO',
+        },
+        'django.db.backends.schema': {
+            'level': 'INFO',
+        },
+        'django.security.DisallowedHost': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'django.template': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'faker.factory': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'factory.generate': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
