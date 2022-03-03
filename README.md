@@ -8,10 +8,23 @@
 > docker compose up -d
 ```
 
+### Окружение разработчика
+Для разработки создаем виртуальное окружение и ставим все необходимые зависимости:
+```bash
+> python3 -m venv venv
+> pip install -r src/requirements.txt
+```
+
 ### Запуск web приложения
 Приложение запускается с помощью ```run.py```:
 ```bash
 > python3 src/run.py web [--collectstatic | --no-collect-static] [--uvicorn-debug | --no-uvicorn-debug]
+```
+
+### Запуск в Docker
+```bash
+> docker build . -t <image-name>
+> docker run -it -p 8000:8000 <image-name>
 ```
 
 ### Django
