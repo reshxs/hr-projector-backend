@@ -1,3 +1,4 @@
+import logging
 import os
 
 import click
@@ -10,7 +11,10 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings'
 django.setup()
 
 from django.core import management
+from django.conf import settings
 import hr.app
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -20,13 +24,13 @@ def cli():
 
 @cli.command()
 @click.option(
-    '--collectstatic/--no_collectstatic',
+    '--collectstatic/--no-collectstatic',
     is_flag=True,
     default=True,
     help='collect Django static',
 )
 @click.option(
-    '--uvicorn-debug/--no_uvicorn-debug',
+    '--uvicorn-debug/--no-uvicorn-debug',
     is_flag=True,
     default=True,
     help='Enable/Disable debug and auto-reload'
@@ -42,9 +46,12 @@ def web(collectstatic: bool, uvicorn_debug: bool):
 
     uvicorn.run(
         app,
-        host='0.0.0.0',
-        port=8000,
+        host=settings.HOST,
+        port=settings.PORT,
         debug=uvicorn_debug,
+        access_log=False,
+        log_config=None,
+        lifespan='on',
         loop='uvloop',
     )
 
