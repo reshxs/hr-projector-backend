@@ -151,6 +151,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = Path(BASE_DIR, 'staticfiles')
 
+EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+
 LOGGING = {
     'version': 1,
     'disable_existed_loggers': False,
