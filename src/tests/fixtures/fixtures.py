@@ -11,7 +11,7 @@ def _init_django():
 
     import django
 
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'config.session'
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings'
     django.setup()
 
 
