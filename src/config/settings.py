@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+import datetime as dt
 import dotenv
 
 from pathlib import Path
@@ -17,7 +18,7 @@ from pydantic import SecretStr
 
 
 class _Settings(BaseSettings):
-    SECRET_KEY: SecretStr = 'DEVKEY'
+    SECRET_KEY: str = 'DEVKEY'
     DEBUG: bool = True
     VERSION: str = 'unknown'
     THREADS: int = 4
@@ -28,9 +29,9 @@ class _Settings(BaseSettings):
 
     DB_HOST: str = 'localhost'
     DB_PORT: int = 5432
-    DB_NAME: str = 'hr-projector'
-    DB_USER: str = 'hr-projector'
-    DB_PASSWORD: str = 'hr-projector'
+    DB_NAME: str = 'hr_projector'
+    DB_USER: str = 'hr_projector'
+    DB_PASSWORD: str = 'hr_projector'
 
     class Config:
         env_file = dotenv.find_dotenv('.env') or '.env'
@@ -200,3 +201,5 @@ LOGGING = {
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+JWT_EXPIRATION_INTERVAL = dt.timedelta(hours=1)
