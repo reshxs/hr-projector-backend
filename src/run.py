@@ -1,4 +1,3 @@
-import logging
 import os
 
 import click
@@ -6,15 +5,13 @@ import django
 import uvicorn
 
 
-# Иницилизируем Django ДО импортов приложения:
+# Инициализируем Django до инициализации приложения:
 os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings'
 django.setup()
 
 from django.core import management
 from django.conf import settings
 import hr.app
-
-logger = logging.getLogger(__name__)
 
 
 @click.group()

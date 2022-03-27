@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 import dotenv
-import typing as tp
 
 from pathlib import Path
 from pydantic import BaseSettings
@@ -155,7 +154,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 
 LOGGING = {
     'version': 1,
-    'disable_existed_loggers': False,
+    'disable_existing_loggers': False,
     'handlers': {
         'null': {
             'level': 'DEBUG',
