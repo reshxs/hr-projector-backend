@@ -1,13 +1,13 @@
 import os
 
-import click
 import django
-import uvicorn
-
 
 # Инициализируем Django до инициализации приложения:
 os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings'
 django.setup()
+
+import click
+import uvicorn
 
 from django.core import management
 from django.conf import settings

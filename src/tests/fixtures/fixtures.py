@@ -25,9 +25,15 @@ class ApiClient(TestClient):
         use_decimal: bool = True,
         headers: dict = None,
         cookies: dict = None,
+        use_auth: bool = True,
+        auth_token: str = None
     ):
         headers = headers or {}
         cookies = cookies or {}
+
+        if use_auth:
+            assert auth_token is not None
+            headers['Authorization'] = f'bearer {auth_token}'
 
         resp = self.post(
             url=url,
@@ -62,12 +68,7 @@ def api_client(
 
 
 @pytest.fixture()
-def api_request(api_client):
-    return api_client.api_jsonrpc_request
-
-
-@pytest.fixture()
-def web_request(api_request, requests_mock):
+def jsonrpc_request(transactional_db, api_client, requests_mock, auth_user_token):
     requests_mock.register_uri('POST', 'http://testserver/api/v1/web/jsonrpc', real_http=True)
 
-    return functools.partial(api_request, url='/api/v1/web/jsonrpc')
+    return functools.partial(api_client.api_jsonrpc_request, url='/api/v1/web/jsonrpc', auth_token=auth_user_token)

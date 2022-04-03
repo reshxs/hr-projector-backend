@@ -1,9 +1,10 @@
-def test_echo(web_request):
-    resp = web_request(
+def test_echo(jsonrpc_request):
+    resp = jsonrpc_request(
         'echo',
         {
             'message': 'Hello, World!',
         },
+        use_auth=False,
     )
 
     assert resp.get('result') == 'Hello, World!', resp.get('error')
