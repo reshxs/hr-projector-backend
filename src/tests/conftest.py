@@ -72,4 +72,5 @@ fastapi_jsonrpc.call_sync_async = mock_call_sync_async
 pytest_plugins = [
     'tests.fixtures.fixtures',
     'tests.fixtures.auth',
+    'tests.fixtures.const',
 ]

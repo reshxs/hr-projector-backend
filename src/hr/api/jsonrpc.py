@@ -4,8 +4,8 @@ from fastapi_jsonrpc import Entrypoint
 
 from hr import models
 from hr import security
-
-from . import schemes
+from django.contrib.auth.hashers import make_password
+from . import schemas
 from . import errors
 from .dependencies import get_token
 
@@ -14,6 +14,10 @@ api_v1 = Entrypoint(
     name='web',
     summary='Web JSON_RPC entrypoint',
 )
+
+
+# TODO: вытащить handle_default_errors из NPD
+# TODO: отдавать понятные ошибки валидации из pydantic
 
 
 @api_v1.method(
@@ -37,6 +41,38 @@ def test_auth(
 
 @api_v1.method(
     tags=['auth'],
+    summary='Регистрация пользователя',
+    errors=[
+        errors.UserAlreadyExists,
+        errors.DepartmentNotFound,
+    ],
+)
+def register(
+    user_data: schemas.RegistrationSchema = Body(..., title='Данные для создания пользователя'),
+) -> schemas.UserSchema:
+    department = models.Department.objects.get_or_none(id=user_data.department_id)
+    if department is None:
+        raise errors.DepartmentNotFound
+
+    user, created = models.User.objects.get_or_create(
+        email=user_data.email,
+        defaults={
+            'password': make_password(user_data.password),
+            'first_name': user_data.first_name,
+            'last_name': user_data.last_name,
+            'patronymic': user_data.patronymic,
+            'department_id': user_data.department_id,
+        }
+    )
+
+    if not created:
+        raise errors.UserAlreadyExists
+
+    return schemas.UserSchema.from_model(user)
+
+
+@api_v1.method(
+    tags=['auth'],
     summary='Авторизоваться в системе',
     description='В ответ возвращается токен, который необходимо передавать в заголовках в качестве bearer',
     errors=[
@@ -44,8 +80,8 @@ def test_auth(
     ]
 )
 def login(
-    credentials: schemes.LoginSchema = Body(...,),
-) -> schemes.UserTokenSchema:
+    credentials: schemas.LoginSchema = Body(..., ),
+) -> schemas.UserTokenSchema:
     user = models.User.objects.get_or_none(email=credentials.email)
 
     if user is None:
@@ -56,4 +92,4 @@ def login(
 
     token = security.encode_jwt(user_id=user.id)
 
-    return schemes.UserTokenSchema(token=token)
+    return schemas.UserTokenSchema(token=token)

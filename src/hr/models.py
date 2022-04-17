@@ -10,6 +10,18 @@ class QuerySet(models.QuerySet):
             return None
 
 
+class BaseModel(models.Model):
+    objects = QuerySet.as_manager()
+
+
+class Department(BaseModel):
+    class Meta:
+        verbose_name = 'Департамент'
+        verbose_name_plural = 'Департаменты'
+
+    name = models.CharField('Название департамента', max_length=150)
+
+
 class User(AbstractBaseUser):
     objects = QuerySet.as_manager()
 
@@ -17,12 +29,15 @@ class User(AbstractBaseUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
-    email = models.EmailField(unique=True, null=False)
+    email = models.EmailField('Адрес электронной почты', unique=True)
 
-    first_name = models.CharField(max_length=255, null=False)
-    second_name = models.CharField(max_length=255, null=False)
-    patronymic = models.CharField(max_length=255)
+    first_name = models.CharField('Имя', max_length=255)
+    last_name = models.CharField('Фамилия', max_length=255)
+    patronymic = models.CharField('Отчество', max_length=255, null=True, blank=True)
+
+    department = models.ForeignKey(Department, verbose_name='Департамент', on_delete=models.PROTECT)
+    is_manager = models.BooleanField('Является менеджером', default=False)
 
     @property
     def full_name(self):
-        return f'{self.second_name} {self.first_name} {self.patronymic}'.strip()
+        return f'{self.last_name} {self.first_name} {self.patronymic}'.strip()
