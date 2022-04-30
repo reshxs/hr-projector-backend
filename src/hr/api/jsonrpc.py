@@ -5,9 +5,11 @@ from fastapi_jsonrpc import Entrypoint
 from hr import models
 from hr import security
 from django.contrib.auth.hashers import make_password
+from django.db import transaction
 from . import schemas
 from . import errors
 from .dependencies import get_token
+from .dependencies import get_user_id
 
 api_v1 = Entrypoint(
     '/api/v1/web/jsonrpc',
@@ -93,3 +95,25 @@ def login(
     token = security.encode_jwt(user_id=user.id)
 
     return schemas.UserTokenSchema(token=token)
+
+
+@api_v1.method(
+    tags=["applicant"],
+    summary="Добавить резюме",
+)
+def add_resume(
+    user_id: int = Depends(get_user_id),
+    content: str = Body(..., title='Содержимое резюме'),
+) -> schemas.ResumeForApplicantSchema:
+    user = models.User.objects.get_or_none(id=user_id)
+
+    # TODO: решать на уровне user_getter
+    if user is None or user.is_manager:
+        raise errors.Forbidden
+
+    resume = models.Resume.objects.create(
+        user=user,
+        content=content,
+    )
+
+    return schemas.ResumeForApplicantSchema.from_model(resume)
