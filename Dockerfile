@@ -2,15 +2,15 @@ FROM python:3.9-alpine
 
 ENV PYTHONBUFFERED 1
 
-RUN apk add libpq-dev
-RUN apk add build-base
+RUN apk add libpq-dev build-base
+COPY src/requirements.txt ./
+
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir -p app
 WORKDIR app
 
 COPY src /app
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Collect static files before change user due to sudo permissions required:
 RUN python3 manage.py collectstatic --no-input --clear

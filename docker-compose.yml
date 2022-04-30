@@ -9,3 +9,11 @@ services:
       POSTGRES_PASSWORD: hr_projector
     ports:
       - "5432:5432"
+
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+
+
