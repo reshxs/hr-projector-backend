@@ -1,3 +1,4 @@
+import datetime as dt
 import typing as tp
 
 import pydantic
@@ -83,3 +84,24 @@ class LoginSchema(BaseModel):
 
 class UserTokenSchema(BaseModel):
     token: str = Field(..., title='Токен', description='JWT-токен')
+
+
+class ResumeForApplicantSchema(BaseModel):
+    id: int = Field(..., title='ID')
+    state: models.ResumeState = Field(..., title='Состояние')
+    content: str = Field(..., title='Содержимое')
+    created_at: dt.datetime = Field(..., title='Дата/Время создания')
+    published_at: tp.Optional[dt.datetime] = Field(
+        None,
+        title='Дата/Время публикации',
+    )
+
+    @classmethod
+    def from_model(cls, resume: models.Resume):
+        return cls(
+            id=resume.id,
+            state=resume.state,
+            content=resume.content,
+            created_at=resume.created_at,
+            published_at=resume.published_at,
+        )

@@ -1,6 +1,8 @@
 import factory
-from factory.django import DjangoModelFactory
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
+from factory.django import DjangoModelFactory
+
 from . import models
 
 factory.Faker._DEFAULT_LOCALE = 'ru_RU'
@@ -24,5 +26,17 @@ class UserFactory(DjangoModelFactory):
     password = factory.LazyAttribute(lambda s: make_password(s.raw_password))
     department = factory.SubFactory(DepartmentFactory)
 
+    is_manager = False
+
     class Params:
         raw_password = 'password'
+
+
+class ResumeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Resume
+
+    user = factory.SubFactory(UserFactory)
+    state = models.ResumeState.DRAFT
+    content = factory.Faker('sentence')
+    created_at = factory.LazyFunction(timezone.now)

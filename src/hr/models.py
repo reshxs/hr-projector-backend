@@ -1,3 +1,6 @@
+import enum
+
+from concurrency.fields import IntegerVersionField
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 
@@ -41,3 +44,29 @@ class User(AbstractBaseUser):
     @property
     def full_name(self):
         return f'{self.last_name} {self.first_name} {self.patronymic}'.strip()
+
+
+class ResumeState(models.TextChoices):
+    DRAFT = 'DRAFT', 'Черновое'
+    PUBLISHED = 'PUBLISHED', 'Опубликовано'
+    HIDDEN = 'HIDDEN', 'Скрыто'
+
+
+class Resume(BaseModel):
+    class Meta:
+        verbose_name = 'Резюме'
+        verbose_name_plural = 'Резюме'
+
+    State = ResumeState
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    state = models.CharField(
+        'Состояние',
+        max_length=25,
+        choices=State.choices,
+        default=State.DRAFT,
+    )
+    content = models.TextField('Содержимое', null=True, blank=True)
+    created_at = models.DateTimeField('Дата/Время создания', auto_now_add=True)
+    published_at = models.DateTimeField('Дата/Время публикации', null=True, blank=True)
+    _version = IntegerVersionField()
