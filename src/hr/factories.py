@@ -26,7 +26,7 @@ class UserFactory(DjangoModelFactory):
     password = factory.LazyAttribute(lambda s: make_password(s.raw_password))
     department = factory.SubFactory(DepartmentFactory)
 
-    is_manager = False
+    role = models.UserRole.EMPLOYEE
 
     class Params:
         raw_password = 'password'

@@ -35,7 +35,7 @@ def test_register__ok(jsonrpc_request, department):
             'id': department.id,
             'name': department.name,
         },
-        'is_manager': False,
+        'role': 'EMPLOYEE',
     }
 
     user_id = response['result'].get('id')
@@ -48,7 +48,7 @@ def test_register__ok(jsonrpc_request, department):
     assert user.patronymic == request.patronymic
     assert user.check_password(request.password)
     assert model_to_dict(user.department) == model_to_dict(department)
-    assert not user.is_manager
+    assert user.role == models.UserRole.EMPLOYEE
 
 
 def test_register__user_already_exists(jsonrpc_request, department):

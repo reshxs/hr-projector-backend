@@ -3,6 +3,8 @@ import datetime as dt
 import pytest
 
 from hr import security
+from hr import factories
+from hr import models
 
 pytestmark = [
     pytest.mark.django_db(transaction=True)
@@ -25,10 +27,10 @@ def test_forbidden(jsonrpc_request):
     }
 
 
-def test_token_expired(freezer, settings, jsonrpc_request, auth_user_id):
+def test_token_expired(freezer, settings, jsonrpc_request, auth_user):
     now = dt.datetime.now()
 
-    token = security.encode_jwt(auth_user_id)
+    token = security.encode_jwt(auth_user)
 
     token_expired_date = now + settings.JWT_EXPIRATION_INTERVAL + dt.timedelta(minutes=1)
     freezer.move_to(token_expired_date)
@@ -43,3 +45,18 @@ def test_token_expired(freezer, settings, jsonrpc_request, auth_user_id):
 def test_ok(jsonrpc_request, auth_user, auth_user_token):
     resp = jsonrpc_request('test_auth', auth_token=auth_user_token)
     assert resp.get('result') == f'Hello, {auth_user.full_name}', resp.get('error')
+
+
+def test_not_allowed_role__forbidden(jsonrpc_request, freezer):
+    user = factories.UserFactory.create(role=models.UserRole.MANAGER)
+    token = security.encode_jwt(user)
+
+    resp = jsonrpc_request(
+        'add_resume',
+        {
+            'content': 'content',
+        },
+        auth_token=token,
+    )
+
+    assert resp.get('error') == {'code': 403, 'message': 'forbidden'}

@@ -1,15 +1,13 @@
+from django.contrib.auth.hashers import make_password
 from fastapi import Body
 from fastapi import Depends
 from fastapi_jsonrpc import Entrypoint
 
 from hr import models
 from hr import security
-from django.contrib.auth.hashers import make_password
-from django.db import transaction
-from . import schemas
 from . import errors
-from .dependencies import get_token
-from .dependencies import get_user_id
+from . import schemas
+from .dependencies import UserGetter
 
 api_v1 = Entrypoint(
     '/api/v1/web/jsonrpc',
@@ -35,9 +33,8 @@ def echo(message: str) -> str:
     summary='Тестовый метод, проверяем авторизацию',
 )
 def test_auth(
-    token: security.UserToken = Depends(get_token)
+    user: models.User = Depends(UserGetter())
 ) -> str:
-    user = models.User.objects.get_or_none(id=token.user_id)
     return f'Hello, {user.full_name}'
 
 
@@ -92,7 +89,7 @@ def login(
     if not user.check_password(credentials.password):
         raise errors.Forbidden
 
-    token = security.encode_jwt(user_id=user.id)
+    token = security.encode_jwt(user)
 
     return schemas.UserTokenSchema(token=token)
 
@@ -102,15 +99,13 @@ def login(
     summary="Добавить резюме",
 )
 def add_resume(
-    user_id: int = Depends(get_user_id),
+    user: models.User = Depends(
+        UserGetter(
+            allowed_roles=[models.UserRole.EMPLOYEE],
+        ),
+    ),
     content: str = Body(..., title='Содержимое резюме'),
 ) -> schemas.ResumeForApplicantSchema:
-    user = models.User.objects.get_or_none(id=user_id)
-
-    # TODO: решать на уровне user_getter
-    if user is None or user.is_manager:
-        raise errors.Forbidden
-
     resume = models.Resume.objects.create(
         user=user,
         content=content,

@@ -14,11 +14,6 @@ def auth_user() -> models.User:
 
 
 @pytest.fixture()
-def auth_user_id(auth_user) -> int:
-    return auth_user.id
-
-
-@pytest.fixture()
 def auth_user_token(settings, auth_user) -> str:
     settings.JWT_EXPIRATION_INTERVAL = dt.timedelta(days=90)
-    return security.encode_jwt(auth_user.id)
+    return security.encode_jwt(auth_user)
