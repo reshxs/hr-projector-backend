@@ -33,22 +33,5 @@ def test_ok(auth_user, jsonrpc_request, freezer):
     assert resume.user == auth_user
     assert resume.content == content
     assert resume.state == models.ResumeState.DRAFT
-    assert resume.created_at == timezone.now()
+    assert resume.created_at == timezone.now().astimezone()
     assert resume.published_at is None
-
-
-def test_manager_user__forbidden(auth_user, jsonrpc_request):
-    auth_user.is_manager = True
-    auth_user.save()
-
-    assert models.Resume.objects.count() == 0
-
-    resp = jsonrpc_request(
-        'add_resume',
-        {
-            'content': 'content',
-        },
-    )
-
-    assert resp.get('error') == {'code': 403, 'message': 'forbidden'}
-    assert models.Resume.objects.count() == 0

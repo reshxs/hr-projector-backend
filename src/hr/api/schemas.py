@@ -62,7 +62,7 @@ class UserSchema(BaseModel):
 
     department: DepartmentSchema = Field(..., title='Департамент')
 
-    is_manager: bool = Field(..., title='Является менеджером')
+    role: models.UserRole = Field(..., title='Является менеджером')
 
     @classmethod
     def from_model(cls, user: models.User):
@@ -73,7 +73,7 @@ class UserSchema(BaseModel):
             last_name=user.last_name,
             patronymic=user.patronymic,
             department=DepartmentSchema.from_model(user.department),
-            is_manager=user.is_manager,
+            role=user.role,
         )
 
 

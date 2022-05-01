@@ -25,6 +25,11 @@ class Department(BaseModel):
     name = models.CharField('Название департамента', max_length=150)
 
 
+class UserRole(models.TextChoices):
+    EMPLOYEE = 'EMPLOYEE', 'рядовой сотрудник'
+    MANAGER = 'MANAGER', 'менеджер'
+
+
 class User(AbstractBaseUser):
     objects = QuerySet.as_manager()
 
@@ -39,7 +44,13 @@ class User(AbstractBaseUser):
     patronymic = models.CharField('Отчество', max_length=255, null=True, blank=True)
 
     department = models.ForeignKey(Department, verbose_name='Департамент', on_delete=models.PROTECT)
-    is_manager = models.BooleanField('Является менеджером', default=False)
+    role = models.CharField(
+        max_length=25,
+        choices=UserRole.choices,
+        default=UserRole.EMPLOYEE,
+    )
+
+    USERNAME_FIELD = 'email'
 
     @property
     def full_name(self):

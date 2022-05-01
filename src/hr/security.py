@@ -5,9 +5,12 @@ from jose import jwt
 from pydantic import BaseModel
 from pydantic import Field
 
+from . import models
+
 
 class UserToken(BaseModel):
     user_id: int
+    user_role: models.UserRole
     expired_at: dt.datetime = Field(..., alias='exp')
 
     class Config:
@@ -18,9 +21,13 @@ class TokenExpiredError(Exception):
     ...
 
 
-def encode_jwt(user_id: int) -> str:
+def encode_jwt(user: models.User) -> str:
     expired_at = dt.datetime.now() + settings.JWT_EXPIRATION_INTERVAL
-    token = UserToken(user_id=user_id, expired_at=expired_at.isoformat())
+    token = UserToken(
+        user_id=user.id,
+        user_role=user.role,
+        expired_at=expired_at.isoformat(),
+    )
     return jwt.encode(token.dict(by_alias=True), key=settings.SECRET_KEY)
 
 

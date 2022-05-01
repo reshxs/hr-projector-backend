@@ -1,8 +1,11 @@
+import typing as tp
+
 import fastapi
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from starlette.requests import Request
 
+from hr import models
 from hr import security
 from . import errors
 
@@ -29,7 +32,17 @@ def get_token(
     return token
 
 
-def get_user_id(
-    token: security.UserToken = Depends(get_token)
-) -> int:
-    return token.user_id
+class UserGetter:
+    def __init__(self, allowed_roles: tp.List[models.UserRole] = None):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, token: security.UserToken = Depends(get_token)):
+        if self.allowed_roles is not None and token.user_role not in self.allowed_roles:
+            raise errors.Forbidden
+
+        user = models.User.objects.get_or_none(id=token.user_id)
+
+        if user is None:
+            raise errors.Forbidden
+
+        return user
