@@ -14,3 +14,8 @@ class UserAlreadyExists(BaseError):
 class DepartmentNotFound(BaseError):
     CODE = 2001
     MESSAGE = 'Department not found'
+
+
+class ResumeNotFound(BaseError):
+    CODE = 3001
+    MESSAGE = 'Resume not found'

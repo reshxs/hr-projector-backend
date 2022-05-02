@@ -4,6 +4,7 @@ from fastapi_jsonrpc import Entrypoint
 
 from hr import models
 from . import schemas
+from . import errors
 from .dependencies import UserGetter
 from .dependencies import get_token
 
@@ -37,5 +38,28 @@ def add_resume(
         user=user,
         content=content,
     )
+
+    return schemas.ResumeForApplicantSchema.from_model(resume)
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary='Получить резюме по ID',
+)
+def get_resume_for_applicant(
+    user: models.User = Depends(
+        UserGetter(
+            allowed_roles=[models.UserRole.EMPLOYEE],
+        ),
+    ),
+    resume_id: int = Body(..., title='ID резюме', alias='id')
+) -> schemas.ResumeForApplicantSchema:
+    resume = models.Resume.objects.get_or_none(
+        user_id=user.id,
+        id=resume_id,
+    )
+
+    if resume is None:
+        raise errors.ResumeNotFound
 
     return schemas.ResumeForApplicantSchema.from_model(resume)
