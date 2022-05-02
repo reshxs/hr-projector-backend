@@ -145,3 +145,42 @@ def hide_resume(
         resume.save(update_fields=('state', 'published_at'))
 
     return schemas.ResumeForApplicantSchema.from_model(resume)
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary='Редактировать резюме',
+    errors=[
+        errors.ResumeNotFound,
+        errors.ResumeWrongState,
+    ],
+)
+def edit_resume(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.EMPLOYEE,]),
+    ),
+    resume_id: int = Body(..., title='ID резюме', alias='id'),
+    new_content: str = Body(..., title='Данные для обновления'),
+) -> schemas.ResumeForApplicantSchema:
+    with transaction.atomic():
+        resume = (
+            models.Resume.objects
+            .select_for_update(
+                of=('self',),
+            )
+            .get_or_none(
+                id=resume_id,
+                user_id=user.id,
+            )
+        )
+
+        if resume is None:
+            raise errors.ResumeNotFound
+
+        if resume.state != models.ResumeState.DRAFT:
+            raise errors.ResumeWrongState
+
+        resume.content = new_content
+        resume.save(update_fields=('content',))
+
+    return schemas.ResumeForApplicantSchema.from_model(resume)
