@@ -47,6 +47,9 @@ def add_resume(
 @api_v1.method(
     tags=['applicant'],
     summary='Получить резюме по ID',
+    errors=[
+        errors.ResumeNotFound,
+    ]
 )
 def get_resume_for_applicant(
     user: models.User = Depends(
@@ -70,6 +73,9 @@ def get_resume_for_applicant(
 @api_v1.method(
     tags=['applicant'],
     summary='Опубликовать резюме',
+    errors=[
+        errors.ResumeNotFound,
+    ]
 )
 def publish_resume(
     user: models.User = Depends(
@@ -96,6 +102,46 @@ def publish_resume(
 
         resume.state = models.ResumeState.PUBLISHED
         resume.published_at = timezone.now()
+        resume.save(update_fields=('state', 'published_at'))
+
+    return schemas.ResumeForApplicantSchema.from_model(resume)
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary='Скрыть резюме',
+    errors=[
+        errors.ResumeNotFound,
+    ]
+)
+def hide_resume(
+    user: models.User = Depends(
+        UserGetter(
+            allowed_roles=[models.UserRole.EMPLOYEE],
+        ),
+    ),
+    resume_id: int = Body(..., title='ID резюме', alias='id')
+) -> schemas.ResumeForApplicantSchema:
+    with transaction.atomic():
+        resume = (
+            models.Resume.objects
+            .select_for_update(
+                of=('self',)
+            )
+            .get_or_none(
+                user_id=user.id,
+                id=resume_id,
+            )
+        )
+
+        if resume is None:
+            raise errors.ResumeNotFound
+
+        if resume.state != models.ResumeState.PUBLISHED:
+            raise errors.ResumeWrongState
+
+        resume.state = models.ResumeState.HIDDEN
+        resume.published_at = None
         resume.save(update_fields=('state', 'published_at'))
 
     return schemas.ResumeForApplicantSchema.from_model(resume)
