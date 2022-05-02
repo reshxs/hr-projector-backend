@@ -1,3 +1,5 @@
+import typing as tp
+
 from django.db import transaction
 from django.utils import timezone
 from fastapi import Body
@@ -68,6 +70,31 @@ def get_resume_for_applicant(
         raise errors.ResumeNotFound
 
     return schemas.ResumeForApplicantSchema.from_model(resume)
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary='Получить список резюме',
+)
+def get_resumes_for_applicant(
+    user: models.User = Depends(
+        UserGetter(
+            allowed_roles=[models.UserRole.EMPLOYEE],
+        ),
+    ),
+    filters: tp.Optional[schemas.ResumeFiltersForApplicant] = Body(None, title='Фильтры')
+) -> list[schemas.ResumeForApplicantSchema]:
+    if filters is not None:
+        filters = filters.dict(exclude_none=True)
+    else:
+        filters = {}
+
+    resumes = models.Resume.objects.filter(
+        user_id=user.id,
+        **filters
+    )
+
+    return [schemas.ResumeForApplicantSchema.from_model(resume) for resume in resumes]
 
 
 @api_v1.method(

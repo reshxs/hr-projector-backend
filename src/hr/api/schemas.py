@@ -5,6 +5,7 @@ import pydantic
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import EmailStr
 from pydantic import Field
+from pydantic import conlist
 
 from hr import models
 
@@ -105,3 +106,18 @@ class ResumeForApplicantSchema(BaseModel):
             created_at=resume.created_at,
             published_at=resume.published_at,
         )
+
+
+class ResumeFiltersForApplicant(BaseModel):
+    state__in: tp.Optional[conlist(models.ResumeState, min_items=1)] = Field(
+        None,
+        title='Фильтр по состоянию',
+        description='Вернутся только резюме, состояния которых соответствуют заданным',
+        alias='states',
+    )
+    id__in: tp.Optional[conlist(int, min_items=1)] = Field(
+        None,
+        title='Фильтр по Id',
+        description='Возвращает резюме по переданному списку ID',
+        alias='ids',
+    )
