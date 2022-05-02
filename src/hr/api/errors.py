@@ -19,3 +19,8 @@ class DepartmentNotFound(BaseError):
 class ResumeNotFound(BaseError):
     CODE = 3001
     MESSAGE = 'Resume not found'
+
+
+class ResumeWrongState(BaseError):
+    CODE = 3002
+    MESSAGE = 'Resume has not allowed state for this method'

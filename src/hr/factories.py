@@ -40,3 +40,10 @@ class ResumeFactory(DjangoModelFactory):
     state = models.ResumeState.DRAFT
     content = factory.Faker('sentence')
     created_at = factory.LazyFunction(timezone.now)
+    published_at = None
+
+    class Params:
+        published = factory.Trait(
+            state=models.ResumeState.PUBLISHED,
+            published_at=factory.LazyFunction(timezone.now),
+        )
