@@ -20,7 +20,11 @@ def jsonrpc_request(api_client, requests_mock):
 
 
 def test_forbidden(jsonrpc_request):
-    resp = jsonrpc_request('test_auth', use_auth=False)
+    resp = jsonrpc_request(
+        'add_resume',
+        {'content': 'content'},
+        use_auth=False,
+    )
     assert resp.get('error') == {
         'code': 403,
         'message': 'forbidden',
@@ -35,7 +39,11 @@ def test_token_expired(freezer, settings, jsonrpc_request, auth_user):
     token_expired_date = now + settings.JWT_EXPIRATION_INTERVAL + dt.timedelta(minutes=1)
     freezer.move_to(token_expired_date)
 
-    resp = jsonrpc_request('test_auth', auth_token=token)
+    resp = jsonrpc_request(
+        'add_resume',
+        {'content': 'content'},
+        auth_token=token,
+    )
     assert resp.get('error') == {
         'code': 403,
         'message': 'forbidden',
@@ -43,8 +51,12 @@ def test_token_expired(freezer, settings, jsonrpc_request, auth_user):
 
 
 def test_ok(jsonrpc_request, auth_user, auth_user_token):
-    resp = jsonrpc_request('test_auth', auth_token=auth_user_token)
-    assert resp.get('result') == f'Hello, {auth_user.full_name}', resp.get('error')
+    resp = jsonrpc_request(
+        'add_resume',
+        {'content': 'content'},
+        auth_token=auth_user_token,
+    )
+    assert resp.get('error') is None
 
 
 def test_not_allowed_role__forbidden(jsonrpc_request, freezer):
