@@ -1,0 +1,21 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:14.2
+    environment:
+      POSTGRES_DB: hr_projector
+      POSTGRES_USER: hr_projector
+      POSTGRES_PASSWORD: hr_projector
+    ports:
+      - "5432:5432"
+  web:
+    build: .
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: hr_projector
+      DB_USER: hr_projector
+      DB_PASSWORD: hr_projector
+    ports:
+      - "8000:8000"

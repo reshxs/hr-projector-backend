@@ -18,4 +18,4 @@ RUN python3 manage.py collectstatic --no-input --clear
 RUN adduser -D user
 USER user
 
-CMD ["python", "run.py", "web", "--no-uvicorn-debug", "--no-collectstatic"]
+CMD ["python", "run.py", "web", "--no-uvicorn-debug", "--no-collectstatic", "--migrate"]
