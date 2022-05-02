@@ -9,11 +9,12 @@ from django.conf import settings
 from django.core.asgi import get_asgi_application as get_django_asgi_app
 from django.core.signals import request_started, request_finished
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
-from hr.api.jsonrpc import api_v1 as jsonrpc_api_v1
 from hr.api.auth import api_v1 as auth_api_v1
+from hr.api.jsonrpc import api_v1 as jsonrpc_api_v1
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,15 @@ app = fastapi_jsonrpc.API(
     title='HR PROJECTOR',
     version=settings.VERSION,
     description='Тут будет описание',
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],  # FIXME: перед деплоем настроить политики доступа
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.bind_entrypoint(jsonrpc_api_v1)
