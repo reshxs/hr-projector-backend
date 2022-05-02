@@ -16,6 +16,9 @@ class QuerySet(models.QuerySet):
 class BaseModel(models.Model):
     objects = QuerySet.as_manager()
 
+    class Meta:
+        abstract = True
+
 
 class Department(BaseModel):
     class Meta:
