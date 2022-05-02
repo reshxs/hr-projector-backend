@@ -26,7 +26,7 @@ def test_ok(auth_user, jsonrpc_request, freezer):
         'id': resume.id,
         'state': 'DRAFT',
         'content': content,
-        'created_at': AnyThing,  # FIXME: сравнивать с нормальной timezone
+        'created_at': resume.created_at.isoformat(),  # FIXME: с  помощью freezer явно проверять, что время == now
         'published_at': None,
     }, resp.get('error')
 
