@@ -10,10 +10,10 @@ pytestmark = [
 ]
 
 
-def test_unregistered(jsonrpc_request, auth_user):
+def test_unregistered(auth_request, auth_user):
     auth_user.delete()
 
-    resp = jsonrpc_request(
+    resp = auth_request(
         'login',
         {
             'credentials': {
@@ -29,10 +29,10 @@ def test_unregistered(jsonrpc_request, auth_user):
     }
 
 
-def test_wrong_password(jsonrpc_request):
+def test_wrong_password(auth_request):
     user = factories.UserFactory.create(raw_password='password')
 
-    resp = jsonrpc_request(
+    resp = auth_request(
         'login',
         {
             'credentials': {
@@ -48,13 +48,13 @@ def test_wrong_password(jsonrpc_request):
     }
 
 
-def test_ok(jsonrpc_request, freezer, settings):
+def test_ok(auth_request, freezer, settings):
     now = dt.datetime.now()
 
     raw_password = 'test_password'
     user = factories.UserFactory.create(raw_password=raw_password)
 
-    resp = jsonrpc_request(
+    resp = auth_request(
         'login',
         {
             'credentials': {

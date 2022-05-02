@@ -31,8 +31,7 @@ class ApiClient(TestClient):
         headers = headers or {}
         cookies = cookies or {}
 
-        if use_auth:
-            assert auth_token is not None
+        if use_auth and auth_token is not None:
             headers['Authorization'] = f'bearer {auth_token}'
 
         resp = self.post(
@@ -72,3 +71,10 @@ def jsonrpc_request(transactional_db, api_client, requests_mock, auth_user_token
     requests_mock.register_uri('POST', 'http://testserver/api/v1/web/jsonrpc', real_http=True)
 
     return functools.partial(api_client.api_jsonrpc_request, url='/api/v1/web/jsonrpc', auth_token=auth_user_token)
+
+
+@pytest.fixture()
+def auth_request(transactional_db, api_client, requests_mock):
+    requests_mock.register_uri('POST', 'http://testserver/api/v1/auth/jsonrpc', real_http=True)
+
+    return functools.partial(api_client.api_jsonrpc_request, url='/api/v1/auth/jsonrpc')

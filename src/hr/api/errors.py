@@ -11,11 +11,6 @@ class UserAlreadyExists(BaseError):
     MESSAGE = 'User already exists'
 
 
-class PasswordsDoesNotMatch(BaseError):
-    CODE = 1002
-    MESSAGE = 'Passwords does not match'
-
-
 class DepartmentNotFound(BaseError):
     CODE = 2001
     MESSAGE = 'Department not found'
