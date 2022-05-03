@@ -236,3 +236,24 @@ def create_vacancy(
     )
 
     return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Получить вакансию по ID',
+)
+def get_vacancy_for_manager(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+) -> schemas.VacancyForManagerSchema:
+    vacancy = models.Vacancy.objects.get_or_none(
+        id=vacancy_id,
+        creator__department_id=user.department_id,
+    )
+
+    if vacancy is None:
+        raise errors.VacancyNotFound
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)
