@@ -21,7 +21,7 @@ def jsonrpc_request(api_client, requests_mock):
 
 def test_forbidden(jsonrpc_request):
     resp = jsonrpc_request(
-        'add_resume',
+        'create_resume',
         {'content': 'content'},
         use_auth=False,
     )
@@ -40,7 +40,7 @@ def test_token_expired(freezer, settings, jsonrpc_request, user):
     freezer.move_to(token_expired_date)
 
     resp = jsonrpc_request(
-        'add_resume',
+        'create_resume',
         {'content': 'content'},
         auth_token=token,
     )
@@ -52,7 +52,7 @@ def test_token_expired(freezer, settings, jsonrpc_request, user):
 
 def test_ok(jsonrpc_request, user, user_token):
     resp = jsonrpc_request(
-        'add_resume',
+        'create_resume',
         {'content': 'content'},
         auth_token=user_token,
     )
@@ -64,7 +64,7 @@ def test_not_allowed_role__forbidden(jsonrpc_request, freezer):
     token = security.encode_jwt(user)
 
     resp = jsonrpc_request(
-        'add_resume',
+        'create_resume',
         {
             'content': 'content',
         },

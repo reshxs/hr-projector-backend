@@ -19,7 +19,7 @@ def test_ok(jsonrpc_request, user):
 
     new_content = 'new_content'
     resp = jsonrpc_request(
-        'edit_resume',
+        'update_resume',
         {
             'id': resume.id,
             'new_content': new_content,
@@ -48,7 +48,7 @@ def test_resume_not_draft__wrong_state_error(jsonrpc_request, user):
     )
 
     resp = jsonrpc_request(
-        'edit_resume',
+        'update_resume',
         {
             'id': resume.id,
             'new_content': 'new_content',
@@ -65,7 +65,7 @@ def test_resume_does_not_exists__not_found_error(jsonrpc_request):
     assert models.Resume.objects.count() == 0
 
     resp = jsonrpc_request(
-        'edit_resume',
+        'update_resume',
         {
             'id': 1,
             'new_content': 'new_content',
@@ -82,7 +82,7 @@ def test_other_user_resume__not_found_error(jsonrpc_request, user):
     assert resume.user_id != user.id
 
     resp = jsonrpc_request(
-        'edit_resume',
+        'update_resume',
         {
             'id': resume.id,
             'new_content': 'new_content',

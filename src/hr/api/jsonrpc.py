@@ -35,7 +35,7 @@ def get_departments() -> list[schemas.DepartmentSchema]:
     tags=['applicant'],
     summary='Добавить резюме',
 )
-def add_resume(
+def create_resume(
     user: models.User = Depends(
         UserGetter(
             allowed_roles=[models.UserRole.APPLICANT],
@@ -187,7 +187,7 @@ def hide_resume(
         errors.ResumeWrongState,
     ],
 )
-def edit_resume(
+def update_resume(
     user: models.User = Depends(
         UserGetter(allowed_roles=[models.UserRole.APPLICANT, ]),
     ),
@@ -255,5 +255,41 @@ def get_vacancy_for_manager(
 
     if vacancy is None:
         raise errors.VacancyNotFound
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Редактировать вакансию',
+)
+def update_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+    new_data: schemas.UpdateVacancySchema = Body(..., title='Новые данные вакансии')
+) -> schemas.VacancyForManagerSchema:
+    with transaction.atomic():
+        vacancy = (
+            models.Vacancy.objects
+            .select_for_update(
+                of=('self',)
+            ).get_or_none(
+                id=vacancy_id,
+                creator_id=user.id,
+            )
+        )
+
+        if vacancy is None:
+            raise errors.VacancyNotFound
+
+        if vacancy.state != models.VacancyState.DRAFT:
+            raise errors.VacancyWrongState
+
+        for key, value in new_data.dict(exclude_none=True).items():
+            setattr(vacancy, key, value)
+
+        vacancy.save(update_fields=('position', 'experience', 'description'))
 
     return schemas.VacancyForManagerSchema.from_model(vacancy)
