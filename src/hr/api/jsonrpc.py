@@ -16,19 +16,26 @@ api_v1 = Entrypoint(
     '/api/v1/web/jsonrpc',
     name='web',
     summary='Web JSON_RPC entrypoint',
-    dependencies=[
-        Depends(get_token),
-    ]
 )
 
 
 # TODO: вытащить handle_default_errors из NPD
 # TODO: отдавать понятные ошибки валидации из pydantic
+# TODO: сделать общий механизм проверки сессии, явно указывать, если не требуется авторизация
 
 
 @api_v1.method(
-    tags=["applicant"],
-    summary="Добавить резюме",
+    tags=['departments']
+)
+def get_departments() -> list[schemas.DepartmentSchema]:
+    # TODO: кэшировать!
+    departments = models.Department.objects.order_by('name').all()
+    return [schemas.DepartmentSchema.from_model(department) for department in departments]
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary='Добавить резюме',
 )
 def add_resume(
     user: models.User = Depends(
