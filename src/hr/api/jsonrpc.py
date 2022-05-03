@@ -132,6 +132,8 @@ def publish_resume(
         if resume is None:
             raise errors.ResumeNotFound
 
+        # FIXME: проверять состояние!
+
         resume.state = models.ResumeState.PUBLISHED
         resume.published_at = timezone.now()
         resume.save(update_fields=('state', 'published_at'))
@@ -241,6 +243,9 @@ def create_vacancy(
 @api_v1.method(
     tags=['manager'],
     summary='Получить вакансию по ID',
+    errors=[
+        errors.VacancyNotFound,
+    ],
 )
 def get_vacancy_for_manager(
     user: models.User = Depends(
@@ -259,9 +264,30 @@ def get_vacancy_for_manager(
     return schemas.VacancyForManagerSchema.from_model(vacancy)
 
 
+def _get_vacancy_for_update(vacancy_id: int, user_id: int):
+    # TODO: вынести из API
+    vacancy = (
+        models.Vacancy.objects
+        .select_for_update(of=('self',))
+        .get_or_none(
+            id=vacancy_id,
+            creator_id=user_id,
+        )
+    )
+
+    if vacancy is None:
+        raise errors.VacancyNotFound
+
+    return vacancy
+
+
 @api_v1.method(
     tags=['manager'],
     summary='Редактировать вакансию',
+    errors=[
+        errors.VacancyNotFound,
+        errors.VacancyWrongState,
+    ],
 )
 def update_vacancy(
     user: models.User = Depends(
@@ -271,15 +297,7 @@ def update_vacancy(
     new_data: schemas.UpdateVacancySchema = Body(..., title='Новые данные вакансии')
 ) -> schemas.VacancyForManagerSchema:
     with transaction.atomic():
-        vacancy = (
-            models.Vacancy.objects
-            .select_for_update(
-                of=('self',)
-            ).get_or_none(
-                id=vacancy_id,
-                creator_id=user.id,
-            )
-        )
+        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
 
         if vacancy is None:
             raise errors.VacancyNotFound
@@ -298,6 +316,10 @@ def update_vacancy(
 @api_v1.method(
     tags=['manager'],
     summary='Опубликовать вакансию',
+    errors=[
+        errors.VacancyNotFound,
+        errors.VacancyWrongState,
+    ],
 )
 def publish_vacancy(
     user: models.User = Depends(
@@ -306,14 +328,7 @@ def publish_vacancy(
     vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
 ) -> schemas.VacancyForManagerSchema:
     with transaction.atomic():
-        vacancy = (
-            models.Vacancy.objects
-            .select_for_update(of=('self',))
-            .get_or_none(
-                id=vacancy_id,
-                creator_id=user.id,
-            )
-        )
+        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
 
         if vacancy is None:
             raise errors.VacancyNotFound
@@ -323,6 +338,36 @@ def publish_vacancy(
 
         vacancy.state = models.VacancyState.PUBLISHED
         vacancy.published_at = timezone.now()
+        vacancy.save(update_fields=('state', 'published_at'))
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Скрыть вакансию',
+    errors=[
+        errors.VacancyNotFound,
+        errors.VacancyWrongState,
+    ],
+)
+def hide_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+) -> schemas.VacancyForManagerSchema:
+    with transaction.atomic():
+        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
+
+        if vacancy is None:
+            raise errors.VacancyNotFound
+
+        if vacancy.state != models.VacancyState.PUBLISHED:
+            raise errors.VacancyWrongState
+
+        vacancy.state = models.VacancyState.HIDDEN
+        vacancy.published_at = None
         vacancy.save(update_fields=('state', 'published_at'))
 
     return schemas.VacancyForManagerSchema.from_model(vacancy)
