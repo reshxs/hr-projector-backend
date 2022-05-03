@@ -216,3 +216,23 @@ def edit_resume(
         resume.save(update_fields=('content',))
 
     return schemas.ResumeForApplicantSchema.from_model(resume)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Создать вакансию',
+)
+def create_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_data: schemas.CreateVacancySchema = Body(..., title='Данные для создания вакансии'),
+) -> schemas.VacancyForManagerSchema:
+    vacancy = models.Vacancy.objects.create(
+        creator=user,
+        position=vacancy_data.position,
+        experience=vacancy_data.experience,
+        description=vacancy_data.description,
+    )
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)

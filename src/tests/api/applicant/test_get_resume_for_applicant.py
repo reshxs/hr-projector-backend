@@ -8,8 +8,8 @@ pytestmark = [
 ]
 
 
-def test_get_resume_for_applicant__ok(jsonrpc_request, auth_user):
-    resume = factories.ResumeFactory.create(user=auth_user)
+def test_get_resume_for_applicant__ok(jsonrpc_request, user):
+    resume = factories.ResumeFactory.create(user=user)
 
     resp = jsonrpc_request(
         'get_resume_for_applicant',

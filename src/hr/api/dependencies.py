@@ -40,6 +40,7 @@ class UserGetter:
         if self.allowed_roles is not None and token.user_role not in self.allowed_roles:
             raise errors.Forbidden
 
+        # TODO: возвращать данные сессии, а не пользователя из БД
         user = models.User.objects.get_or_none(id=token.user_id)
 
         if user is None:

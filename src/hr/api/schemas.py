@@ -6,6 +6,7 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import EmailStr
 from pydantic import Field
 from pydantic import conlist
+from pydantic import conint
 
 from hr import models
 
@@ -120,3 +121,29 @@ class ResumeFiltersForApplicant(BaseModel):
         description='Возвращает резюме по переданному списку ID',
         alias='ids',
     )
+
+
+class CreateVacancySchema(BaseModel):
+    position: str = Field(..., title='Должность')
+    experience: tp.Optional[conint(ge=0)] = Field(None, title='Стаж работы')
+    description: str = Field(..., title='Описание')
+
+
+class VacancyForManagerSchema(BaseModel):
+    state: models.VacancyState = Field(..., title='Состояние')
+    creator: UserSchema = Field(..., title='Создатель вакансии')
+    position: str = Field(..., title='Должность соискателя')
+    experience: tp.Optional[conint(ge=0)] = Field(None, title='Стаж работы соискателя')
+    description: str = Field(..., title='Описание')
+    published_at: tp.Optional[dt.datetime] = Field(None, title='Дата/Время публикации')
+
+    @classmethod
+    def from_model(cls, vacancy: models.Vacancy):
+        return cls(
+            state=vacancy.state,
+            creator=UserSchema.from_model(vacancy.creator),
+            position=vacancy.position,
+            experience=vacancy.experience,
+            description=vacancy.description,
+            published_at=vacancy.published_at,
+        )

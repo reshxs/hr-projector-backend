@@ -10,8 +10,8 @@ pytestmark = [
 ]
 
 
-def test_return_only_users_resumes(jsonrpc_request, auth_user):
-    resumes = factories.ResumeFactory.create_batch(3, user=auth_user)
+def test_return_only_users_resumes(jsonrpc_request, user):
+    resumes = factories.ResumeFactory.create_batch(3, user=user)
     factories.ResumeFactory.create_batch(3)  # other_user
 
     resp = jsonrpc_request(
@@ -32,9 +32,9 @@ def test_return_only_users_resumes(jsonrpc_request, auth_user):
     ), resp.get('error')
 
 
-def test_filter_by_id(jsonrpc_request, auth_user):
-    expected_resumes = factories.ResumeFactory.create_batch(3, user=auth_user)
-    factories.ResumeFactory.create_batch(3, user=auth_user)  # not expected resumes
+def test_filter_by_id(jsonrpc_request, user):
+    expected_resumes = factories.ResumeFactory.create_batch(3, user=user)
+    factories.ResumeFactory.create_batch(3, user=user)  # not expected resumes
 
     resp = jsonrpc_request(
         'get_resumes_for_applicant',
@@ -59,10 +59,10 @@ def test_filter_by_id(jsonrpc_request, auth_user):
     ), resp.get('error')
 
 
-def test_filter_by_state(jsonrpc_request, auth_user):
-    draft = factories.ResumeFactory.create(user=auth_user)
-    published = factories.ResumeFactory.create(published=True, user=auth_user)
-    hidden = factories.ResumeFactory.create(state=models.ResumeState.HIDDEN, user=auth_user)
+def test_filter_by_state(jsonrpc_request, user):
+    draft = factories.ResumeFactory.create(user=user)
+    published = factories.ResumeFactory.create(published=True, user=user)
+    hidden = factories.ResumeFactory.create(state=models.ResumeState.HIDDEN, user=user)
 
     for resume in (draft, published, hidden):
         resp = jsonrpc_request(

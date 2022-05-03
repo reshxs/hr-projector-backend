@@ -1,4 +1,3 @@
-from concurrency.fields import IntegerVersionField
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 
@@ -81,4 +80,42 @@ class Resume(BaseModel):
     content = models.TextField('Содержимое', null=True, blank=True)
     created_at = models.DateTimeField('Дата/Время создания', auto_now_add=True)
     published_at = models.DateTimeField('Дата/Время публикации', null=True, blank=True)
-    _version = IntegerVersionField()
+
+
+class VacancyState(models.TextChoices):
+    DRAFT = 'DRAFT', 'Черновая'
+    PUBLISHED = 'PUBLISHED', 'Опубликована'
+    HIDDEN = 'HIDDEN', 'Скрыта'
+
+
+class Vacancy(BaseModel):
+    class Meta:
+        verbose_name = 'Вакансия'
+        verbose_name_plural = 'Вакансии'
+
+    State = VacancyState
+
+    creator = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        help_text='Менеджер, разместивший вакансию',
+    )
+
+    state = models.CharField(
+        'Состояние',
+        max_length=50,
+        choices=State.choices,
+        default=State.DRAFT,
+    )
+
+    position = models.CharField('Должность', max_length=50)
+    experience = models.PositiveIntegerField(
+        'Стаж работы',
+        null=True,
+        blank=True,
+        help_text='В годах',
+    )
+    description = models.TextField('Описание')
+
+    created_at = models.DateTimeField('Дата/Время создания', auto_now=True)
+    published_at = models.DateTimeField('Дата/Время публикации', null=True, blank=True)

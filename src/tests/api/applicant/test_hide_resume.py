@@ -10,9 +10,9 @@ pytestmark = [
 ]
 
 
-def test_ok(jsonrpc_request, freezer, auth_user):
+def test_ok(jsonrpc_request, freezer, user):
     resume = factories.ResumeFactory.create(
-        user=auth_user,
+        user=user,
         published=True,
     )
     assert resume.state == models.ResumeState.PUBLISHED
@@ -38,8 +38,8 @@ def test_ok(jsonrpc_request, freezer, auth_user):
     assert resume.published_at is None
 
 
-def test_not_published__wrong_state(jsonrpc_request, auth_user):
-    resume = factories.ResumeFactory.create(user=auth_user)
+def test_not_published__wrong_state(jsonrpc_request, user):
+    resume = factories.ResumeFactory.create(user=user)
     assert resume.state == models.ResumeState.DRAFT
 
     resp = jsonrpc_request(
@@ -58,9 +58,9 @@ def test_not_published__wrong_state(jsonrpc_request, auth_user):
     assert old_resume == actual_resume
 
 
-def test_other_user_resume__not_found(jsonrpc_request, auth_user):
+def test_other_user_resume__not_found(jsonrpc_request, user):
     resume = factories.ResumeFactory.create(published=True)
-    assert resume.user_id != auth_user.id
+    assert resume.user_id != user.id
 
     resp = jsonrpc_request(
         'hide_resume',
