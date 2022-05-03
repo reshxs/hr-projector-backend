@@ -293,3 +293,36 @@ def update_vacancy(
         vacancy.save(update_fields=('position', 'experience', 'description'))
 
     return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Опубликовать вакансию',
+)
+def publish_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+) -> schemas.VacancyForManagerSchema:
+    with transaction.atomic():
+        vacancy = (
+            models.Vacancy.objects
+            .select_for_update(of=('self',))
+            .get_or_none(
+                id=vacancy_id,
+                creator_id=user.id,
+            )
+        )
+
+        if vacancy is None:
+            raise errors.VacancyNotFound
+
+        if vacancy.state != models.VacancyState.DRAFT:
+            raise errors.VacancyWrongState
+
+        vacancy.state = models.VacancyState.PUBLISHED
+        vacancy.published_at = timezone.now()
+        vacancy.save(update_fields=('state', 'published_at'))
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)
