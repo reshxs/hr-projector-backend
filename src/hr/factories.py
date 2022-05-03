@@ -47,3 +47,19 @@ class ResumeFactory(DjangoModelFactory):
             state=models.ResumeState.PUBLISHED,
             published_at=factory.LazyFunction(timezone.now),
         )
+
+
+class VacancyFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Resume
+
+    creator = factory.SubFactory(UserFactory)
+
+    state = models.VacancyState.DRAFT
+
+    position = factory.Faker('word')
+    experience = None
+    description = factory.Faker('sentence')
+
+    created_at = factory.LazyFunction(timezone.now)
+    published_at = None

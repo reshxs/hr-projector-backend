@@ -10,8 +10,8 @@ pytestmark = [
 ]
 
 
-def test_unregistered(auth_request, auth_user):
-    auth_user.delete()
+def test_unregistered(auth_request, user):
+    user.delete()
 
     resp = auth_request(
         'login',

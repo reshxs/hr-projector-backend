@@ -9,9 +9,9 @@ pytestmark = [
 ]
 
 
-def test_ok(jsonrpc_request, auth_user):
+def test_ok(jsonrpc_request, user):
     resume = factories.ResumeFactory.create(
-        user=auth_user,
+        user=user,
         content='old_content',
     )
 
@@ -38,11 +38,11 @@ def test_ok(jsonrpc_request, auth_user):
     assert resume.content == new_content
 
 
-def test_resume_not_draft__wrong_state_error(jsonrpc_request, auth_user):
+def test_resume_not_draft__wrong_state_error(jsonrpc_request, user):
     old_content = 'old_content'
 
     resume = factories.ResumeFactory.create(
-        user=auth_user,
+        user=user,
         published=True,
         content=old_content,
     )
@@ -75,11 +75,11 @@ def test_resume_does_not_exists__not_found_error(jsonrpc_request):
     assert resp.get('error') == {'code': 3001, 'message': 'Resume not found'}
 
 
-def test_other_user_resume__not_found_error(jsonrpc_request, auth_user):
+def test_other_user_resume__not_found_error(jsonrpc_request, user):
     old_content = 'old_content'
 
     resume = factories.ResumeFactory.create(content=old_content)
-    assert resume.user_id != auth_user.id
+    assert resume.user_id != user.id
 
     resp = jsonrpc_request(
         'edit_resume',

@@ -1,5 +1,4 @@
 import pytest
-from dirty_equals import AnyThing
 from hr import models
 from django.utils import timezone
 
@@ -8,10 +7,10 @@ pytestmark = [
 ]
 
 
-def test_ok(auth_user, jsonrpc_request, freezer):
+def test_ok(user, jsonrpc_request, freezer):
     assert models.Resume.objects.count() == 0
 
-    content = 'Dummy resume content'
+    content = 'Dummy applicant content'
     resp = jsonrpc_request(
         'add_resume',
         {
@@ -30,7 +29,7 @@ def test_ok(auth_user, jsonrpc_request, freezer):
         'published_at': None,
     }, resp.get('error')
 
-    assert resume.user == auth_user
+    assert resume.user == user
     assert resume.content == content
     assert resume.state == models.ResumeState.DRAFT
     assert resume.created_at == timezone.now().astimezone()

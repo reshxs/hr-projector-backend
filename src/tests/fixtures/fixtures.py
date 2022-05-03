@@ -67,10 +67,10 @@ def api_client(
 
 
 @pytest.fixture()
-def jsonrpc_request(transactional_db, api_client, requests_mock, auth_user_token):
+def jsonrpc_request(transactional_db, api_client, requests_mock, user_token):
     requests_mock.register_uri('POST', 'http://testserver/api/v1/web/jsonrpc', real_http=True)
 
-    return functools.partial(api_client.api_jsonrpc_request, url='/api/v1/web/jsonrpc', auth_token=auth_user_token)
+    return functools.partial(api_client.api_jsonrpc_request, url='/api/v1/web/jsonrpc', auth_token=user_token)
 
 
 @pytest.fixture()

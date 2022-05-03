@@ -31,10 +31,10 @@ def test_forbidden(jsonrpc_request):
     }
 
 
-def test_token_expired(freezer, settings, jsonrpc_request, auth_user):
+def test_token_expired(freezer, settings, jsonrpc_request, user):
     now = dt.datetime.now()
 
-    token = security.encode_jwt(auth_user)
+    token = security.encode_jwt(user)
 
     token_expired_date = now + settings.JWT_EXPIRATION_INTERVAL + dt.timedelta(minutes=1)
     freezer.move_to(token_expired_date)
@@ -50,11 +50,11 @@ def test_token_expired(freezer, settings, jsonrpc_request, auth_user):
     }
 
 
-def test_ok(jsonrpc_request, auth_user, auth_user_token):
+def test_ok(jsonrpc_request, user, user_token):
     resp = jsonrpc_request(
         'add_resume',
         {'content': 'content'},
-        auth_token=auth_user_token,
+        auth_token=user_token,
     )
     assert resp.get('error') is None
 
