@@ -48,7 +48,6 @@ class RegistrationSchema(BaseModel):
         password_confirmation = values.get('password_confirmation')
 
         if password != password_confirmation:
-            # TODO: возможно это тот случай, когда надо завести отдельную ошибку
             raise ValueError('Password and password confirmation should be equal!')
 
         return values
