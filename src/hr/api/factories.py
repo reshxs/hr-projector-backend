@@ -5,10 +5,7 @@ from . import schemas
 factory.Faker._DEFAULT_LOCALE = 'ru_RU'
 
 
-class StartRegistrationRequestFactory(factory.Factory):
-    class Meta:
-        model = schemas.RegistrationSchema
-
+class StartRegistrationRequestFactory(factory.DictFactory):
     email = factory.Faker('email')
     first_name = factory.Faker('first_name_male')
     last_name = factory.Faker('last_name_male')

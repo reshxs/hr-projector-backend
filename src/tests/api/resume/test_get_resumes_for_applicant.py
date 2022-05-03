@@ -3,7 +3,7 @@ from dirty_equals import IsPartialDict
 
 from hr import factories
 from hr import models
-from testing import UnorderedList
+from libs.testing import UnorderedList
 
 pytestmark = [
     pytest.mark.django_db(transaction=True)
