@@ -63,3 +63,13 @@ class VacancyFactory(DjangoModelFactory):
 
     created_at = factory.LazyFunction(timezone.now)
     published_at = None
+
+    class Params:
+        published = factory.Trait(
+            state=models.VacancyState.PUBLISHED,
+            published_at=factory.LazyFunction(timezone.now),
+        )
+        hidden = factory.Trait(
+            state=models.VacancyState.HIDDEN,
+            published_at=None,
+        )

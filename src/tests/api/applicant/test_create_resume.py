@@ -12,7 +12,7 @@ def test_ok(user, jsonrpc_request, freezer):
 
     content = 'Dummy applicant content'
     resp = jsonrpc_request(
-        'add_resume',
+        'create_resume',
         {
             'content': content,
         },
