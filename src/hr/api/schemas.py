@@ -130,6 +130,7 @@ class CreateVacancySchema(BaseModel):
 
 
 class VacancyForManagerSchema(BaseModel):
+    id: int = Field(..., title='ID вакансии')
     state: models.VacancyState = Field(..., title='Состояние')
     creator: UserSchema = Field(..., title='Создатель вакансии')
     position: str = Field(..., title='Должность соискателя')
@@ -140,6 +141,7 @@ class VacancyForManagerSchema(BaseModel):
     @classmethod
     def from_model(cls, vacancy: models.Vacancy):
         return cls(
+            id=vacancy.id,
             state=vacancy.state,
             creator=UserSchema.from_model(vacancy.creator),
             position=vacancy.position,

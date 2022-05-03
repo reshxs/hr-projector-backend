@@ -51,9 +51,9 @@ class ResumeFactory(DjangoModelFactory):
 
 class VacancyFactory(DjangoModelFactory):
     class Meta:
-        model = models.Resume
+        model = models.Vacancy
 
-    creator = factory.SubFactory(UserFactory)
+    creator = factory.SubFactory(UserFactory, role=models.UserRole.MANAGER)
 
     state = models.VacancyState.DRAFT
 

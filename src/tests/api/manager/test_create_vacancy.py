@@ -29,7 +29,19 @@ def test_ok(
         }
     )
 
+    assert models.Vacancy.objects.count() == 1
+    vacancy = models.Vacancy.objects.last()
+
+    assert vacancy.creator == user
+    assert vacancy.state == models.VacancyState.DRAFT
+    assert vacancy.position == 'developer'
+    assert vacancy.experience == experience
+    assert vacancy.description == 'python developer'
+    assert vacancy.created_at == timezone.now()
+    assert vacancy.published_at is None
+
     assert resp.get('result') == {
+        'id': vacancy.id,
         'state': 'DRAFT',
         'creator': {
             'id': user.id,
@@ -48,15 +60,3 @@ def test_ok(
         'experience': experience,
         'published_at': None,
     }, resp.get('error')
-
-    assert models.Vacancy.objects.count() == 1
-
-    vacancy = models.Vacancy.objects.last()
-
-    assert vacancy.creator == user
-    assert vacancy.state == models.VacancyState.DRAFT
-    assert vacancy.position == 'developer'
-    assert vacancy.experience == experience
-    assert vacancy.description == 'python developer'
-    assert vacancy.created_at == timezone.now()
-    assert vacancy.published_at is None
