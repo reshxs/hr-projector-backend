@@ -10,7 +10,6 @@ from hr import models
 from . import errors
 from . import schemas
 from .dependencies import UserGetter
-from .dependencies import get_token
 
 api_v1 = Entrypoint(
     '/api/v1/web/jsonrpc',
@@ -40,7 +39,7 @@ def get_departments() -> list[schemas.DepartmentSchema]:
 def add_resume(
     user: models.User = Depends(
         UserGetter(
-            allowed_roles=[models.UserRole.EMPLOYEE],
+            allowed_roles=[models.UserRole.APPLICANT],
         ),
     ),
     content: str = Body(..., title='Содержимое резюме'),
@@ -63,7 +62,7 @@ def add_resume(
 def get_resume_for_applicant(
     user: models.User = Depends(
         UserGetter(
-            allowed_roles=[models.UserRole.EMPLOYEE],
+            allowed_roles=[models.UserRole.APPLICANT],
         ),
     ),
     resume_id: int = Body(..., title='ID резюме', alias='id')
@@ -86,7 +85,7 @@ def get_resume_for_applicant(
 def get_resumes_for_applicant(
     user: models.User = Depends(
         UserGetter(
-            allowed_roles=[models.UserRole.EMPLOYEE],
+            allowed_roles=[models.UserRole.APPLICANT],
         ),
     ),
     filters: tp.Optional[schemas.ResumeFiltersForApplicant] = Body(None, title='Фильтры')
@@ -114,7 +113,7 @@ def get_resumes_for_applicant(
 def publish_resume(
     user: models.User = Depends(
         UserGetter(
-            allowed_roles=[models.UserRole.EMPLOYEE],
+            allowed_roles=[models.UserRole.APPLICANT],
         ),
     ),
     resume_id: int = Body(..., title='ID резюме', alias='id')
@@ -151,7 +150,7 @@ def publish_resume(
 def hide_resume(
     user: models.User = Depends(
         UserGetter(
-            allowed_roles=[models.UserRole.EMPLOYEE],
+            allowed_roles=[models.UserRole.APPLICANT],
         ),
     ),
     resume_id: int = Body(..., title='ID резюме', alias='id')
@@ -191,7 +190,7 @@ def hide_resume(
 )
 def edit_resume(
     user: models.User = Depends(
-        UserGetter(allowed_roles=[models.UserRole.EMPLOYEE,]),
+        UserGetter(allowed_roles=[models.UserRole.APPLICANT, ]),
     ),
     resume_id: int = Body(..., title='ID резюме', alias='id'),
     new_content: str = Body(..., title='Данные для обновления'),
