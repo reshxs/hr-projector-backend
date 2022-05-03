@@ -35,7 +35,7 @@ def test_register__ok(auth_request, department):
             'id': department.id,
             'name': department.name,
         },
-        'role': 'EMPLOYEE',
+        'role': 'APPLICANT',
     }
 
     user_id = response['result'].get('id')
@@ -48,7 +48,7 @@ def test_register__ok(auth_request, department):
     assert user.patronymic == request.patronymic
     assert user.check_password(request.password)
     assert model_to_dict(user.department) == model_to_dict(department)
-    assert user.role == models.UserRole.EMPLOYEE
+    assert user.role == models.UserRole.APPLICANT
 
 
 def test_register__user_already_exists(auth_request, department):

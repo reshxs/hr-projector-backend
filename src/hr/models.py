@@ -1,5 +1,3 @@
-import enum
-
 from concurrency.fields import IntegerVersionField
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
@@ -29,8 +27,8 @@ class Department(BaseModel):
 
 
 class UserRole(models.TextChoices):
-    EMPLOYEE = 'EMPLOYEE', 'рядовой сотрудник'
-    MANAGER = 'MANAGER', 'менеджер'
+    APPLICANT = 'APPLICANT', 'соискатель'  #: тот, кто хочет поменять место работы
+    MANAGER = 'MANAGER', 'менеджер'  #: тот, кто предлагает место работы
 
 
 class User(AbstractBaseUser):
@@ -50,7 +48,7 @@ class User(AbstractBaseUser):
     role = models.CharField(
         max_length=25,
         choices=UserRole.choices,
-        default=UserRole.EMPLOYEE,
+        default=UserRole.APPLICANT,
     )
 
     USERNAME_FIELD = 'email'
