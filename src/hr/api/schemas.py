@@ -129,6 +129,12 @@ class CreateVacancySchema(BaseModel):
     description: str = Field(..., title='Описание')
 
 
+class UpdateVacancySchema(BaseModel):
+    position: tp.Optional[str] = Field(None, title='Должность')
+    experience: tp.Optional[conint(ge=0)] = Field(None, title='Стаж работы')
+    description: tp.Optional[str] = Field(..., title='Описание')
+
+
 class VacancyForManagerSchema(BaseModel):
     id: int = Field(..., title='ID вакансии')
     state: models.VacancyState = Field(..., title='Состояние')

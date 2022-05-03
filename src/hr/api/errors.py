@@ -29,3 +29,8 @@ class ResumeWrongState(BaseError):
 class VacancyNotFound(BaseError):
     CODE = 4001
     MESSAGE = 'Vacancy not found'
+
+
+class VacancyWrongState(BaseError):
+    CODE = 4002
+    MESSAGE = 'Vacancy has not allowed state for this method'
