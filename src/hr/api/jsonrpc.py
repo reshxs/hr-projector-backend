@@ -432,7 +432,39 @@ def get_vacancies_for_manager(
         .select_related(
             'creator', 'creator__department',
         )
+        .order_by('-id')
     )
 
     paginator = TypedPaginator(schemas.ShortVacancyForManagerSchema, query)
+    return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary=['Получить список вакансий для соискателя'],
+)
+def get_vacancies_for_applicant(
+    _: models.User = Depends(UserGetter()),
+    any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
+    filters: tp.Optional[schemas.VacancyFiltersForApplicant] = Body(
+        None,
+        title='Фильтры',
+    )
+) -> PaginatedResponse[schemas.ShortVacancyForApplicantSchema]:
+    if filters is None:
+        filters = {}
+    else:
+        filters = filters.dict(exclude_none=True)
+
+    query = (
+        models.Vacancy.objects
+        .select_related('creator', 'creator__department')
+        .filter(
+            state__exact=models.VacancyState.PUBLISHED,
+            **filters,
+        )
+        .order_by('-id')
+    )
+
+    paginator = TypedPaginator(schemas.ShortVacancyForApplicantSchema, query)
     return paginator.get_response(any_pagination)

@@ -6,55 +6,61 @@ from hr import factories
 from hr import models
 
 pytestmark = [
-    pytest.mark.django_db(transaction=True)
+    pytest.mark.django_db(transaction=True),
 ]
 
 
-@pytest.mark.parametrize('user', [models.UserRole.MANAGER], indirect=True)
-def test_ok(jsonrpc_request, user):
-    vacancies = factories.VacancyFactory.create_batch(3, creator=user)
-    factories.VacancyFactory.create_batch(3)  # unexpected_vacancies
+def test_ok(jsonrpc_request):
+    vacancies = factories.VacancyFactory.create_batch(3, published=True)
+    factories.VacancyFactory.create_batch(3, hidden=True)  # unexpected (hidden)
+    factories.VacancyFactory.create_batch(3)  # unexpected (draft)
 
     resp = jsonrpc_request(
-        'get_vacancies_for_manager',
+        'get_vacancies_for_applicant',
         {
             'pagination': {
                 'count': True,
-            }
-        }
+            },
+        },
     )
 
     assert resp.get('result') == {
         'has_next': False,
+        'total_size': 3,
         'items': IsListOrTuple(
             *[
                 {
-                    'creator_full_name': vacancy.creator.full_name,
-                    'creator_id': vacancy.creator.id,
                     'id': vacancy.id,
+                    'creator_id': vacancy.creator.id,
+                    'creator_full_name': vacancy.creator.full_name,
+                    'department_id': vacancy.creator.department.id,
+                    'department_name': vacancy.creator.department.name,
                     'position': vacancy.position,
-                    'published_at': None,
-                    'state': vacancy.state.value,
+                    'experience': vacancy.experience,
+                    'published_at': vacancy.published_at.isoformat()
                 }
                 for vacancy in vacancies
             ],
             check_order=False,
         ),
-        'total_size': 3,
     }, resp.get('error')
 
 
-@pytest.mark.parametrize('user', [models.UserRole.MANAGER], indirect=True)
-def test_filter_by_state(jsonrpc_request, user):
-    draft = factories.VacancyFactory.create(creator=user)
-    hidden = factories.VacancyFactory.create(creator=user, hidden=True)
-    factories.VacancyFactory.create(creator=user, published=True)  # published
+def test_filter_by_department(jsonrpc_request):
+    expected_department = factories.DepartmentFactory.create()
+    expected_vacancy = factories.VacancyFactory.create(
+        creator__department=expected_department,
+        published=True,
+    )
+    factories.VacancyFactory.create(published=True)  # unexpected
+
+    assert models.Vacancy.objects.count() == 2
 
     resp = jsonrpc_request(
-        'get_vacancies_for_manager',
+        'get_vacancies_for_applicant',
         {
             'filters': {
-                'states': ['DRAFT', 'HIDDEN'],
+                'department_ids': [expected_department.id],
             },
             'pagination': {
                 'count': True,
@@ -64,23 +70,18 @@ def test_filter_by_state(jsonrpc_request, user):
 
     assert resp.get('result') == {
         'has_next': False,
-        'items': IsListOrTuple(
-            *[
-                IsPartialDict(
-                    {
-                        'id': vacancy.id,
-                        'state': vacancy.state.value,
-                    },
-                )
-                for vacancy in (draft, hidden)
-            ],
-            check_order=False,
-        ),
-        'total_size': 2,
+        'items': [
+            IsPartialDict(
+                {
+                    'id': expected_vacancy.id,
+                    'department_id': expected_department.id,
+                },
+            )
+        ],
+        'total_size': 1,
     }, resp.get('error')
 
 
-@pytest.mark.parametrize('user', [models.UserRole.MANAGER], indirect=True)
 @pytest.mark.parametrize(
     'position_param',
     [
@@ -91,14 +92,20 @@ def test_filter_by_state(jsonrpc_request, user):
         'ботчик',
     ]
 )
-def test_filter_by_position(jsonrpc_request, user, position_param):
-    expected_vacancy = factories.VacancyFactory.create(creator=user, position='Разработчик')
-    factories.VacancyFactory.create(creator=user, position='Аналитик')  # unexpected
+def test_filter_by_position(jsonrpc_request, position_param):
+    expected_vacancy = factories.VacancyFactory.create(
+        position='Разработчик',
+        published=True,
+    )
+    factories.VacancyFactory.create(
+        position='Аналитик',
+        published=True,
+    )  # unexpected
 
     assert models.Vacancy.objects.count() == 2
 
     resp = jsonrpc_request(
-        'get_vacancies_for_manager',
+        'get_vacancies_for_applicant',
         {
             'filters': {
                 'position': position_param,
@@ -123,18 +130,17 @@ def test_filter_by_position(jsonrpc_request, user, position_param):
     }, resp.get('error')
 
 
-@pytest.mark.parametrize('user', [models.UserRole.MANAGER], indirect=True)
-def test_filter_by_experience(jsonrpc_request, user):
-    lower_bound = factories.VacancyFactory.create(creator=user, experience=2)
-    between_bounds = factories.VacancyFactory.create(creator=user, experience=3)
-    upper_bound = factories.VacancyFactory.create(creator=user, experience=4)
-    factories.VacancyFactory.create(creator=user, experience=1)  # less_lower_bound
-    factories.VacancyFactory.create(creator=user, experience=6)  # greater_lower_bound
+def test_filter_by_experience(jsonrpc_request):
+    lower_bound = factories.VacancyFactory.create(experience=2, published=True)
+    between_bounds = factories.VacancyFactory.create(experience=3, published=True)
+    upper_bound = factories.VacancyFactory.create(experience=4, published=True)
+    factories.VacancyFactory.create(experience=1, published=True)  # less_lower_bound
+    factories.VacancyFactory.create(experience=6, published=True)  # greater_lower_bound
 
     assert models.Vacancy.objects.count() == 5
 
     resp = jsonrpc_request(
-        'get_vacancies_for_manager',
+        'get_vacancies_for_applicant',
         {
             'filters': {
                 'experience_lte': 4,
@@ -164,25 +170,24 @@ def test_filter_by_experience(jsonrpc_request, user):
     }, resp.get('error')
 
 
-@pytest.mark.parametrize('user', [models.UserRole.MANAGER], indirect=True)
-def test_filter_by_published_at(jsonrpc_request, user, freezer):
+def test_filter_by_published_at(jsonrpc_request, freezer):
     freezer.move_to('2022-05-07')
-    factories.VacancyFactory.create(creator=user, published=True)  # too_old
+    factories.VacancyFactory.create(published=True)  # too_old
 
     freezer.move_to('2022-05-08')
-    lower_bound = factories.VacancyFactory.create(creator=user, published=True)
+    lower_bound = factories.VacancyFactory.create(published=True)
 
     freezer.move_to('2022-05-09')
-    between_bounds = factories.VacancyFactory.create(creator=user, published=True)
+    between_bounds = factories.VacancyFactory.create(published=True)
 
     freezer.move_to('2022-05-10')
-    upper_bound = factories.VacancyFactory.create(creator=user, published=True)
+    upper_bound = factories.VacancyFactory.create(published=True)
 
     freezer.move_to('2022-05-11')
-    factories.VacancyFactory.create(creator=user, published=True)  # too_young
+    factories.VacancyFactory.create(published=True)  # too_young
 
     resp = jsonrpc_request(
-        'get_vacancies_for_manager',
+        'get_vacancies_for_applicant',
         {
             'filters': {
                 'published_lte': '2022-05-10',
@@ -210,4 +215,3 @@ def test_filter_by_published_at(jsonrpc_request, user, freezer):
         ),
         'total_size': 3,
     }, resp.get('error')
-
