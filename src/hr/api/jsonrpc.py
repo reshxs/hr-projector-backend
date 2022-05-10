@@ -413,11 +413,21 @@ def get_vacancies_for_manager(
         UserGetter(allowed_roles=[models.UserRole.MANAGER]),
     ),
     any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
+    filters: tp.Optional[schemas.VacancyFiltersForManager] = Body(
+        None,
+        title='Фильтры',
+    ),
 ) -> PaginatedResponse[schemas.ShortVacancyForManagerSchema]:
+    if filters is None:
+        filters = {}
+    else:
+        filters = filters.dict(exclude_none=True)
+
     query = (
         models.Vacancy.objects
         .filter(
             creator__department_id=user.department_id,
+            **filters,
         )
         .select_related(
             'creator', 'creator__department',
