@@ -371,3 +371,31 @@ def hide_vacancy(
         vacancy.save(update_fields=('state', 'published_at'))
 
     return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary='Получить вакансию для соискателя',
+    errors=[
+        errors.VacancyNotFound,
+    ],
+)
+def get_vacancy_for_applicant(
+    _: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.APPLICANT]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+) -> schemas.VacancyForApplicantSchema:
+    vacancy = (
+        models.Vacancy.objects
+        .select_related('creator', 'creator__department')
+        .get_or_none(
+            id=vacancy_id,
+            state=models.VacancyState.PUBLISHED,
+        )
+    )
+
+    if vacancy is None:
+        raise errors.VacancyNotFound
+
+    return schemas.VacancyForApplicantSchema.from_model(vacancy)

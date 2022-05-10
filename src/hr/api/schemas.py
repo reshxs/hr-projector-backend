@@ -155,3 +155,31 @@ class VacancyForManagerSchema(BaseModel):
             description=vacancy.description,
             published_at=vacancy.published_at,
         )
+
+
+class VacancyForApplicantSchema(BaseModel):
+    id: int = Field(..., title='ID вакансии')
+    creator_id: int = Field(..., title='ID менеджера, создавшего вакансию')
+    creator_full_name: str = Field(..., title='ФИО менеджера, создавшего вакансию')
+    creator_contact: str = Field(..., title='Контакт менеджера, разместившего вакансию')
+    department_id: int = Field(..., title='ID департамента')
+    department_name: str = Field(..., title='Название департамента')
+    position: str = Field(..., title='Требуемая должность')
+    experience: tp.Optional[conint(ge=0)] = Field(None, title='Требуемый стаж работы')
+    description: str = Field(..., title='Описание вакансии')
+    published_at: dt.datetime = Field(..., title='Дата публикации')
+
+    @classmethod
+    def from_model(cls, vacancy: models.Vacancy):
+        return cls(
+            id=vacancy.id,
+            creator_id=vacancy.creator.id,
+            creator_full_name=vacancy.creator.full_name,
+            creator_contact=vacancy.creator.email,
+            department_id=vacancy.creator.department.id,
+            department_name=vacancy.creator.department.name,
+            position=vacancy.position,
+            experience=vacancy.experience,
+            description=vacancy.description,
+            published_at=vacancy.published_at,
+        )
