@@ -10,6 +10,9 @@ from hr import models
 from . import errors
 from . import schemas
 from .dependencies import UserGetter
+from .dependencies import get_mutual_exclusive_pagination
+from .pagination import TypedPaginator, PaginatedResponse
+from .pagination import AnyPagination
 
 api_v1 = Entrypoint(
     '/api/v1/web/jsonrpc',
@@ -399,3 +402,27 @@ def get_vacancy_for_applicant(
         raise errors.VacancyNotFound
 
     return schemas.VacancyForApplicantSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Получить список вакансий для менеджера',
+)
+def get_vacancies_for_manager(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
+) -> PaginatedResponse[schemas.ShortVacancyForManagerSchema]:
+    query = (
+        models.Vacancy.objects
+        .filter(
+            creator__department_id=user.department_id,
+        )
+        .select_related(
+            'creator', 'creator__department',
+        )
+    )
+
+    paginator = TypedPaginator(schemas.ShortVacancyForManagerSchema, query)
+    return paginator.get_response(any_pagination)

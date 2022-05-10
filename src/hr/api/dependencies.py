@@ -1,6 +1,7 @@
 import typing as tp
 
 import fastapi
+import fastapi_jsonrpc
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from starlette.requests import Request
@@ -8,6 +9,8 @@ from starlette.requests import Request
 from hr import models
 from hr import security
 from . import errors
+from .pagination import PaginationParams, AnyPagination
+from .pagination import PaginationInfinityScrollParams
 
 
 class JsonRpcBearerAuth(OAuth2PasswordBearer):
@@ -47,3 +50,15 @@ class UserGetter:
             raise errors.Forbidden
 
         return user
+
+
+def get_mutual_exclusive_pagination(
+    pagination: tp.Optional[PaginationParams] = fastapi_jsonrpc.Body(None, title='Постраничная пагинация'),
+    pagination_scroll: tp.Optional[PaginationInfinityScrollParams] = fastapi_jsonrpc.Body(
+        None, title='Бесконечный скроллинг',
+    ),
+) -> AnyPagination:
+    if pagination is not None and pagination_scroll is not None:
+        raise fastapi_jsonrpc.InvalidParams
+
+    return pagination or pagination_scroll or PaginationParams()

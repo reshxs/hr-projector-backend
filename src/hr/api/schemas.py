@@ -135,6 +135,26 @@ class UpdateVacancySchema(BaseModel):
     description: tp.Optional[str] = Field(..., title='Описание')
 
 
+class ShortVacancyForManagerSchema(BaseModel):
+    id: int = Field(..., title='ID вакансии')
+    state: models.VacancyState = Field(..., title='Состояние')
+    creator_id: int = Field(..., title='ID создателя')
+    creator_full_name: str = Field(..., title='ФИО создателя')
+    position: str = Field(..., title='Требуемая должность')
+    published_at: tp.Optional[dt.datetime] = Field(None, title='Дата/Время публикации')
+
+    @classmethod
+    def from_model(cls, vacancy: models.Vacancy):
+        return cls(
+            id=vacancy.id,
+            state=vacancy.state,
+            creator_id=vacancy.creator.id,
+            creator_full_name=vacancy.creator.full_name,
+            position=vacancy.position,
+            published_at=vacancy.published_at,
+        )
+
+
 class VacancyForManagerSchema(BaseModel):
     id: int = Field(..., title='ID вакансии')
     state: models.VacancyState = Field(..., title='Состояние')
