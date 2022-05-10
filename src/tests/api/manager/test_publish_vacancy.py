@@ -1,10 +1,10 @@
 import pytest
+from django.forms import model_to_dict
 
 from django.utils import timezone
 
 from hr import factories
 from hr import models
-from libs.testing import model_to_dict
 
 pytestmark = [
     pytest.mark.django_db(transaction=True),

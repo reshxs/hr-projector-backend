@@ -2,7 +2,7 @@ import datetime as dt
 import typing as tp
 
 import pydantic
-from pydantic import BaseModel as PydanticBaseModel
+from pydantic import BaseModel as PydanticBaseModel, constr
 from pydantic import EmailStr
 from pydantic import Field
 from pydantic import conlist
@@ -135,6 +135,26 @@ class UpdateVacancySchema(BaseModel):
     description: tp.Optional[str] = Field(..., title='Описание')
 
 
+class ShortVacancyForManagerSchema(BaseModel):
+    id: int = Field(..., title='ID вакансии')
+    state: models.VacancyState = Field(..., title='Состояние')
+    creator_id: int = Field(..., title='ID создателя')
+    creator_full_name: str = Field(..., title='ФИО создателя')
+    position: str = Field(..., title='Требуемая должность')
+    published_at: tp.Optional[dt.datetime] = Field(None, title='Дата/Время публикации')
+
+    @classmethod
+    def from_model(cls, vacancy: models.Vacancy):
+        return cls(
+            id=vacancy.id,
+            state=vacancy.state,
+            creator_id=vacancy.creator.id,
+            creator_full_name=vacancy.creator.full_name,
+            position=vacancy.position,
+            published_at=vacancy.published_at,
+        )
+
+
 class VacancyForManagerSchema(BaseModel):
     id: int = Field(..., title='ID вакансии')
     state: models.VacancyState = Field(..., title='Состояние')
@@ -155,6 +175,46 @@ class VacancyForManagerSchema(BaseModel):
             description=vacancy.description,
             published_at=vacancy.published_at,
         )
+
+
+class VacancyFiltersForManager(BaseModel):
+    state__in: tp.Optional[conlist(models.VacancyState, min_items=1)] = Field(
+        None,
+        title='Фильтрация по состоянию',
+        description='Вернутся только те вакансии, состояние которых соответствует одному их переданных',
+        alias='states',
+    )
+    position__icontains: tp.Optional[constr(min_length=3)] = Field(
+        None,
+        title='Поиск по должности',
+        description='Вернутся только те вакансии, требуемая должность которых содержит переданную строку',
+        alias='position',
+    )
+    # FIXME: experience может быть null
+    experience__lte: tp.Optional[conint(ge=1)] = Field(
+        None,
+        title='Требуемый опыт меньше...',
+        alias='experience_lte',
+    )
+    experience__gte: tp.Optional[conint(ge=0)] = Field(
+        None,
+        title='Требуемый опыт больше...',
+        alias='experience_gte',
+    )
+    published_at__date__lte: tp.Optional[dt.date] = Field(
+        None,
+        title='Опубликовано после ...',
+        description='Вернет только те вакансии, которые были опубликованы после переданной даты',
+        example='2022-05-10',
+        alias='published_lte',
+    )
+    published_at__date__gte: tp.Optional[dt.date] = Field(
+        None,
+        title='Опубликовано до ...',
+        description='Вернет только те вакансии, которые были опубликованы до переданной даты',
+        example='2022-05-10',
+        alias='published_gte',
+    )
 
 
 class VacancyForApplicantSchema(BaseModel):

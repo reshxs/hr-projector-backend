@@ -3,7 +3,7 @@ from dirty_equals import IsPartialDict
 
 from hr import factories
 from hr import models
-from libs.testing import UnorderedList
+from dirty_equals import IsListOrTuple
 
 pytestmark = [
     pytest.mark.django_db(transaction=True)
@@ -18,8 +18,8 @@ def test_return_only_users_resumes(jsonrpc_request, user):
         'get_resumes_for_applicant',
     )
 
-    assert resp.get('result') == UnorderedList(
-        [
+    assert resp.get('result') == IsListOrTuple(
+        *[
             {
                 'id': resume.id,
                 'state': resume.state.value,
@@ -29,6 +29,7 @@ def test_return_only_users_resumes(jsonrpc_request, user):
             }
             for resume in resumes
         ],
+        check_order=False,
     ), resp.get('error')
 
 
@@ -45,8 +46,8 @@ def test_filter_by_id(jsonrpc_request, user):
         },
     )
 
-    assert resp.get('result') == UnorderedList(
-        [
+    assert resp.get('result') == IsListOrTuple(
+        *[
             {
                 'id': resume.id,
                 'state': resume.state.value,
@@ -56,6 +57,7 @@ def test_filter_by_id(jsonrpc_request, user):
             }
             for resume in expected_resumes
         ],
+        check_order=False,
     ), resp.get('error')
 
 
