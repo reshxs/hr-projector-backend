@@ -35,12 +35,12 @@ class PaginationInfinityScrollParams(BaseModel):
     )
 
 
-AnyPagination = tp.Union[PaginationParams, PaginationInfinityScrollParams]
+AnyPagination = PaginationParams | PaginationInfinityScrollParams
 
 
 class BasePaginatedResponse(GenericModel):
-    has_next: tp.Optional[bool] = Field(..., title='Есть ли еще объекты')
-    total_size: tp.Optional[int] = Field(
+    has_next: bool | None = Field(..., title='Есть ли еще объекты')
+    total_size: int | None = Field(
         title='Всего объектов',
         example=100,
         description='Может быть null или отсутствовать, если запрос был сделан с count=false',
@@ -62,7 +62,7 @@ class TypedPaginator(tp.Generic[_ST]):
 
     def get_response(
         self,
-        pagination: tp.Union[PaginationParams, PaginationInfinityScrollParams],
+        pagination: PaginationParams | PaginationInfinityScrollParams,
         *model_args: tp.Iterable[tp.Any],
         **model_kwargs: tp.Any,
     ) -> PaginatedResponse[_ST]:
@@ -122,7 +122,7 @@ class TypedPaginatorWithCustomParams(TypedPaginator):
         self._custom_params = {}
         self._paginated_response = paginated_response
 
-    def set_custom_params(self, custom_params: tp.Dict[str, tp.Any]):
+    def set_custom_params(self, custom_params: dict[str, tp.Any]):
         """Параметры для добавления к основным.
 
         **custom_params подставляются в query.aggregate
@@ -134,12 +134,12 @@ class TypedPaginatorWithCustomParams(TypedPaginator):
             ), 'custom_params должны соответствовать paginated_response'
         self._custom_params = custom_params
 
-    def _get_custom_params(self) -> tp.Dict[str, tp.Any]:
+    def _get_custom_params(self) -> dict[str, tp.Any]:
         return self.query.aggregate(**self._custom_params)
 
     def get_response(
         self,
-        pagination: tp.Union[PaginationParams, PaginationInfinityScrollParams],
+        pagination: PaginationParams | PaginationInfinityScrollParams,
         *model_args: tp.Iterable[tp.Any],
     ) -> tp.Any:
         """Получить ответ в соответствии с переданной навигацией

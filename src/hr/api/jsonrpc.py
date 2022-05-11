@@ -1,5 +1,3 @@
-import typing as tp
-
 from django.db import transaction
 from django.utils import timezone
 from fastapi import Body
@@ -90,7 +88,7 @@ def get_resumes_for_applicant(
             allowed_roles=[models.UserRole.APPLICANT],
         ),
     ),
-    filters: tp.Optional[schemas.ResumeFiltersForApplicant] = Body(None, title='Фильтры')
+    filters: schemas.ResumeFiltersForApplicant | None = Body(None, title='Фильтры')
 ) -> list[schemas.ResumeForApplicantSchema]:
     if filters is not None:
         filters = filters.dict(exclude_none=True)
@@ -413,7 +411,7 @@ def get_vacancies_for_manager(
         UserGetter(allowed_roles=[models.UserRole.MANAGER]),
     ),
     any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
-    filters: tp.Optional[schemas.VacancyFiltersForManager] = Body(
+    filters: schemas.VacancyFiltersForManager | None = Body(
         None,
         title='Фильтры',
     ),
@@ -446,7 +444,7 @@ def get_vacancies_for_manager(
 def get_vacancies_for_applicant(
     _: models.User = Depends(UserGetter()),
     any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
-    filters: tp.Optional[schemas.VacancyFiltersForApplicant] = Body(
+    filters: schemas.VacancyFiltersForApplicant | None = Body(
         None,
         title='Фильтры',
     )
