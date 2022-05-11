@@ -37,12 +37,6 @@ docker build . -t <image-name>
 docker run -it -p 8000:8000 <image-name>
 ```
 
-### Django
-Перед запуском не забываем применять миграции:
-```bash
-python3 src/manage.py migrate
-```
-
 ### Конфигурация
 Для удобной конфигурации приложения используем .env
 
