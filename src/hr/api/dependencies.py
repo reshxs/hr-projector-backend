@@ -1,5 +1,3 @@
-import typing as tp
-
 import fastapi
 import fastapi_jsonrpc
 from fastapi import Depends
@@ -36,7 +34,7 @@ def get_token(
 
 
 class UserGetter:
-    def __init__(self, allowed_roles: tp.List[models.UserRole] = None):
+    def __init__(self, allowed_roles: list[models.UserRole] = None):
         self.allowed_roles = allowed_roles
 
     def __call__(self, token: security.UserToken = Depends(get_token)):
@@ -53,8 +51,8 @@ class UserGetter:
 
 
 def get_mutual_exclusive_pagination(
-    pagination: tp.Optional[PaginationParams] = fastapi_jsonrpc.Body(None, title='Постраничная пагинация'),
-    pagination_scroll: tp.Optional[PaginationInfinityScrollParams] = fastapi_jsonrpc.Body(
+    pagination: PaginationParams | None = fastapi_jsonrpc.Body(None, title='Постраничная пагинация'),
+    pagination_scroll: PaginationInfinityScrollParams | None = fastapi_jsonrpc.Body(
         None, title='Бесконечный скроллинг',
     ),
 ) -> AnyPagination:
