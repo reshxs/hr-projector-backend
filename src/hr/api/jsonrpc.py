@@ -19,7 +19,6 @@ api_v1 = Entrypoint(
 )
 
 
-# TODO: вытащить handle_default_errors из NPD
 # TODO: сделать общий механизм проверки сессии, явно указывать, если не требуется авторизация
 
 
@@ -30,6 +29,9 @@ def get_departments() -> list[schemas.DepartmentSchema]:
     # TODO: кэшировать!
     departments = models.Department.objects.order_by('name').all()
     return [schemas.DepartmentSchema.from_model(department) for department in departments]
+
+
+# МЕТОДЫ ДЛЯ СОИСКАТЕЛЯ
 
 
 @api_v1.method(
@@ -222,6 +224,68 @@ def update_resume(
 
 
 @api_v1.method(
+    tags=['applicant'],
+    summary='Получить вакансию для соискателя',
+    errors=[
+        errors.VacancyNotFound,
+    ],
+)
+def get_vacancy_for_applicant(
+    _: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.APPLICANT]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+) -> schemas.VacancyForApplicantSchema:
+    vacancy = (
+        models.Vacancy.objects
+        .select_related('creator', 'creator__department')
+        .get_or_none(
+            id=vacancy_id,
+            state=models.VacancyState.PUBLISHED,
+        )
+    )
+
+    if vacancy is None:
+        raise errors.VacancyNotFound
+
+    return schemas.VacancyForApplicantSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['applicant'],
+    summary=['Получить список вакансий для соискателя'],
+)
+def get_vacancies_for_applicant(
+    _: models.User = Depends(UserGetter()),
+    any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
+    filters: schemas.VacancyFiltersForApplicant | None = Body(
+        None,
+        title='Фильтры',
+    )
+) -> PaginatedResponse[schemas.ShortVacancyForApplicantSchema]:
+    if filters is None:
+        filters = {}
+    else:
+        filters = filters.dict(exclude_none=True)
+
+    query = (
+        models.Vacancy.objects
+        .select_related('creator', 'creator__department')
+        .filter(
+            state__exact=models.VacancyState.PUBLISHED,
+            **filters,
+        )
+        .order_by('-id')
+    )
+
+    paginator = TypedPaginator(schemas.ShortVacancyForApplicantSchema, query)
+    return paginator.get_response(any_pagination)
+
+
+# МЕТОДЫ ДЛЯ МЕНЕДЖЕРА
+
+
+@api_v1.method(
     tags=['manager'],
     summary='Создать вакансию',
 )
@@ -265,143 +329,6 @@ def get_vacancy_for_manager(
     return schemas.VacancyForManagerSchema.from_model(vacancy)
 
 
-def _get_vacancy_for_update(vacancy_id: int, user_id: int):
-    # TODO: вынести из API
-    vacancy = (
-        models.Vacancy.objects
-        .select_for_update(of=('self',))
-        .get_or_none(
-            id=vacancy_id,
-            creator_id=user_id,
-        )
-    )
-
-    if vacancy is None:
-        raise errors.VacancyNotFound
-
-    return vacancy
-
-
-@api_v1.method(
-    tags=['manager'],
-    summary='Редактировать вакансию',
-    errors=[
-        errors.VacancyNotFound,
-        errors.VacancyWrongState,
-    ],
-)
-def update_vacancy(
-    user: models.User = Depends(
-        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
-    ),
-    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
-    new_data: schemas.UpdateVacancySchema = Body(..., title='Новые данные вакансии')
-) -> schemas.VacancyForManagerSchema:
-    with transaction.atomic():
-        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
-
-        if vacancy is None:
-            raise errors.VacancyNotFound
-
-        if vacancy.state != models.VacancyState.DRAFT:
-            raise errors.VacancyWrongState
-
-        for key, value in new_data.dict(exclude_none=True).items():
-            setattr(vacancy, key, value)
-
-        vacancy.save(update_fields=('position', 'experience', 'description'))
-
-    return schemas.VacancyForManagerSchema.from_model(vacancy)
-
-
-@api_v1.method(
-    tags=['manager'],
-    summary='Опубликовать вакансию',
-    errors=[
-        errors.VacancyNotFound,
-        errors.VacancyWrongState,
-    ],
-)
-def publish_vacancy(
-    user: models.User = Depends(
-        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
-    ),
-    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
-) -> schemas.VacancyForManagerSchema:
-    with transaction.atomic():
-        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
-
-        if vacancy is None:
-            raise errors.VacancyNotFound
-
-        if vacancy.state != models.VacancyState.DRAFT:
-            raise errors.VacancyWrongState
-
-        vacancy.state = models.VacancyState.PUBLISHED
-        vacancy.published_at = timezone.now()
-        vacancy.save(update_fields=('state', 'published_at'))
-
-    return schemas.VacancyForManagerSchema.from_model(vacancy)
-
-
-@api_v1.method(
-    tags=['manager'],
-    summary='Скрыть вакансию',
-    errors=[
-        errors.VacancyNotFound,
-        errors.VacancyWrongState,
-    ],
-)
-def hide_vacancy(
-    user: models.User = Depends(
-        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
-    ),
-    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
-) -> schemas.VacancyForManagerSchema:
-    with transaction.atomic():
-        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
-
-        if vacancy is None:
-            raise errors.VacancyNotFound
-
-        if vacancy.state != models.VacancyState.PUBLISHED:
-            raise errors.VacancyWrongState
-
-        vacancy.state = models.VacancyState.HIDDEN
-        vacancy.published_at = None
-        vacancy.save(update_fields=('state', 'published_at'))
-
-    return schemas.VacancyForManagerSchema.from_model(vacancy)
-
-
-@api_v1.method(
-    tags=['applicant'],
-    summary='Получить вакансию для соискателя',
-    errors=[
-        errors.VacancyNotFound,
-    ],
-)
-def get_vacancy_for_applicant(
-    _: models.User = Depends(
-        UserGetter(allowed_roles=[models.UserRole.APPLICANT]),
-    ),
-    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
-) -> schemas.VacancyForApplicantSchema:
-    vacancy = (
-        models.Vacancy.objects
-        .select_related('creator', 'creator__department')
-        .get_or_none(
-            id=vacancy_id,
-            state=models.VacancyState.PUBLISHED,
-        )
-    )
-
-    if vacancy is None:
-        raise errors.VacancyNotFound
-
-    return schemas.VacancyForApplicantSchema.from_model(vacancy)
-
-
 @api_v1.method(
     tags=['manager'],
     summary='Получить список вакансий для менеджера',
@@ -437,32 +364,101 @@ def get_vacancies_for_manager(
     return paginator.get_response(any_pagination)
 
 
-@api_v1.method(
-    tags=['applicant'],
-    summary=['Получить список вакансий для соискателя'],
-)
-def get_vacancies_for_applicant(
-    _: models.User = Depends(UserGetter()),
-    any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
-    filters: schemas.VacancyFiltersForApplicant | None = Body(
-        None,
-        title='Фильтры',
-    )
-) -> PaginatedResponse[schemas.ShortVacancyForApplicantSchema]:
-    if filters is None:
-        filters = {}
-    else:
-        filters = filters.dict(exclude_none=True)
-
-    query = (
+def _get_vacancy_for_update(vacancy_id: int, user_id: int):
+    # TODO: вынести из API
+    vacancy = (
         models.Vacancy.objects
-        .select_related('creator', 'creator__department')
-        .filter(
-            state__exact=models.VacancyState.PUBLISHED,
-            **filters,
+        .select_for_update(of=('self',))
+        .get_or_none(
+            id=vacancy_id,
+            creator_id=user_id,
         )
-        .order_by('-id')
     )
 
-    paginator = TypedPaginator(schemas.ShortVacancyForApplicantSchema, query)
-    return paginator.get_response(any_pagination)
+    if vacancy is None:
+        raise errors.VacancyNotFound
+
+    return vacancy
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Редактировать вакансию',
+    errors=[
+        errors.VacancyNotFound,
+        errors.VacancyWrongState,
+    ],
+)
+def update_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+    new_data: schemas.UpdateVacancySchema = Body(..., title='Новые данные вакансии')
+) -> schemas.VacancyForManagerSchema:
+    with transaction.atomic():
+        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
+
+        if vacancy.state != models.VacancyState.DRAFT:
+            raise errors.VacancyWrongState
+
+        for key, value in new_data.dict(exclude_none=True).items():
+            setattr(vacancy, key, value)
+
+        vacancy.save(update_fields=('position', 'experience', 'description'))
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Опубликовать вакансию',
+    errors=[
+        errors.VacancyNotFound,
+        errors.VacancyWrongState,
+    ],
+)
+def publish_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+) -> schemas.VacancyForManagerSchema:
+    with transaction.atomic():
+        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
+
+        if vacancy.state != models.VacancyState.DRAFT:
+            raise errors.VacancyWrongState
+
+        vacancy.state = models.VacancyState.PUBLISHED
+        vacancy.published_at = timezone.now()
+        vacancy.save(update_fields=('state', 'published_at'))
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Скрыть вакансию',
+    errors=[
+        errors.VacancyNotFound,
+        errors.VacancyWrongState,
+    ],
+)
+def hide_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии', alias='id'),
+) -> schemas.VacancyForManagerSchema:
+    with transaction.atomic():
+        vacancy = _get_vacancy_for_update(vacancy_id, user.id)
+
+        if vacancy.state != models.VacancyState.PUBLISHED:
+            raise errors.VacancyWrongState
+
+        vacancy.state = models.VacancyState.HIDDEN
+        vacancy.published_at = None
+        vacancy.save(update_fields=('state', 'published_at'))
+
+    return schemas.VacancyForManagerSchema.from_model(vacancy)
