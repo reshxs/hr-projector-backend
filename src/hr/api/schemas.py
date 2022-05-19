@@ -306,3 +306,54 @@ class VacancyFiltersForApplicant(BaseModel):
         example='2022-05-10',
         alias='published_gte',
     )
+
+
+class ResumeForManagerSchema(BaseModel):
+    id: int = Field(..., title='ID')
+    content: str = Field(..., title='Содержимое')
+    published_at: dt.datetime = Field(
+        ...,
+        title='Дата/Время публикации',
+    )
+
+    @classmethod
+    def from_model(cls, resume: models.Resume):
+        pass
+
+
+class ShortApplicantSchema(BaseModel):
+    id: int = Field(..., title='Идентификатор пользователя')
+    email: EmailStr = Field(..., title='Email')
+    full_name: str = Field(..., title='ФИО')
+    department: DepartmentSchema = Field(..., title='Департамент')
+
+    @classmethod
+    def from_model(cls, user: models.User):
+
+        return cls(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            department=DepartmentSchema.from_model(user.department),
+        )
+
+
+class ApplicantFilters(BaseModel):
+    email__icontains: str | None = Field(
+        None,
+        title='Поиск по email',
+        description='Вернет всех соискателей, email которых содержит переданную строчку',
+        alias='email',
+    )
+    full_name_index__icontains: str | None = Field(
+        None,
+        title='Поиск по ФИО',
+        description='Вернет всех соискателей, ФИО которых содержит переданную строку',
+        alias='full_name',
+    )
+    department_id__in: conlist(int, min_items=1) | None = Field(
+        None,
+        title='Фильтрация по департаменту',
+        description='Вернет всех соискателей, департамент которых соответствует одному их переданных',
+        alias='department_ids',
+    )
