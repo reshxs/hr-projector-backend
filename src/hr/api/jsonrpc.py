@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.db.models import Value
+from django.db.models.functions import Concat
 from django.utils import timezone
 from fastapi import Body
 from fastapi import Depends
@@ -9,8 +11,8 @@ from . import errors
 from . import schemas
 from .dependencies import UserGetter
 from .dependencies import get_mutual_exclusive_pagination
-from .pagination import TypedPaginator, PaginatedResponse
 from .pagination import AnyPagination
+from .pagination import TypedPaginator, PaginatedResponse
 
 api_v1 = Entrypoint(
     '/api/v1/web/jsonrpc',
@@ -462,3 +464,36 @@ def hide_vacancy(
         vacancy.save(update_fields=('state', 'published_at'))
 
     return schemas.VacancyForManagerSchema.from_model(vacancy)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary=['Получить список соискателей'],
+)
+def get_applicants_for_manager(
+    _: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
+    filters: schemas.ApplicantFilters | None = Body(None, title='Фильтрация'),
+) -> PaginatedResponse[schemas.ShortApplicantSchema]:
+    if filters is not None:
+        filters = filters.dict(exclude_none=True)
+    else:
+        filters = {}
+
+    query = (
+        models.User.objects
+        .annotate(
+            # FIXME: нет связности с фильтрами
+            full_name_index=Concat('last_name', Value(' '), 'first_name', Value(' '), 'patronymic')
+        )
+        .filter(
+            role=models.UserRole.APPLICANT,
+            **filters,
+        )
+        .order_by('-id')
+    )
+
+    paginator = TypedPaginator(schemas.ShortApplicantSchema, query)
+    return paginator.get_response(any_pagination)
