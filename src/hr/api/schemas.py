@@ -1,6 +1,7 @@
 import datetime as dt
 
 import pydantic
+from django.contrib.postgres.search import SearchVector
 from pydantic import BaseModel as PydanticBaseModel, constr
 from pydantic import EmailStr
 from pydantic import Field
@@ -339,13 +340,14 @@ class ShortApplicantSchema(BaseModel):
 
 
 class ApplicantFilters(BaseModel):
-    email__icontains: str | None = Field(
+    email__icontains: constr(min_length=1) | None = Field(
         None,
         title='Поиск по email',
         description='Вернет всех соискателей, email которых содержит переданную строчку',
         alias='email',
     )
-    full_name_index__icontains: str | None = Field(
+    # TODO: повестить индекс!
+    full_name_search: constr(min_length=1) | None = Field(
         None,
         title='Поиск по ФИО',
         description='Вернет всех соискателей, ФИО которых содержит переданную строку',
@@ -357,3 +359,14 @@ class ApplicantFilters(BaseModel):
         description='Вернет всех соискателей, департамент которых соответствует одному их переданных',
         alias='department_ids',
     )
+
+    def filter_query(self, query: models.QuerySet):
+        return (
+            query
+            .annotate(
+                full_name_search=SearchVector('first_name', 'last_name', 'patronymic'),
+            )
+            .filter(
+                **self.dict(exclude_none=True),
+            )
+        )
