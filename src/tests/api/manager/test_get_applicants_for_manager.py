@@ -53,12 +53,12 @@ def test_ok(jsonrpc_request, user):
     [
         'Иванов Василий Вячеславович',
         'иванов василий',
+        'василий иванов',
         'василий Вячеславович',
         'Иванов',
         'Василий',
         'Вячеславович',
         'иванов',
-        'сили',
     ]
 )
 def test_search_by_full_name(jsonrpc_request, user, search_param):
