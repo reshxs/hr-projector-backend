@@ -33,6 +33,7 @@ def test_ok(jsonrpc_request, user):
                     'creator_id': vacancy.creator.id,
                     'id': vacancy.id,
                     'position': vacancy.position,
+                    'experience': vacancy.experience,
                     'published_at': None,
                     'state': vacancy.state.value,
                 }
@@ -153,8 +154,7 @@ def test_filter_by_experience(jsonrpc_request, user):
                 IsPartialDict(
                     {
                         'id': vacancy.id,
-                        # FIXME: добавить стаж в схему
-                        # 'experience': vacancy.experience,
+                        'experience': vacancy.experience,
                     },
                 )
                 for vacancy in (lower_bound, between_bounds, upper_bound)
