@@ -141,6 +141,7 @@ class ShortVacancyForManagerSchema(BaseModel):
     creator_id: int = Field(..., title='ID создателя')
     creator_full_name: str = Field(..., title='ФИО создателя')
     position: str = Field(..., title='Требуемая должность')
+    experience: int | None = Field(..., title='Требуемый опыт работы')
     published_at: dt.datetime | None = Field(None, title='Дата/Время публикации')
 
     @classmethod
@@ -151,6 +152,7 @@ class ShortVacancyForManagerSchema(BaseModel):
             creator_id=vacancy.creator.id,
             creator_full_name=vacancy.creator.full_name,
             position=vacancy.position,
+            experience=vacancy.experience,
             published_at=vacancy.published_at,
         )
 
