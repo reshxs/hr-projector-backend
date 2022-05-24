@@ -10,10 +10,10 @@ pytestmark = [
 ]
 
 
-def test_unregistered(auth_request, user):
+def test_unregistered(jsonrpc_request, user):
     user.delete()
 
-    resp = auth_request(
+    resp = jsonrpc_request(
         'login',
         {
             'credentials': {
@@ -21,6 +21,7 @@ def test_unregistered(auth_request, user):
                 'password': 'unregistered',
             },
         },
+        use_auth=False,
     )
 
     assert resp.get('error') == {
@@ -29,10 +30,10 @@ def test_unregistered(auth_request, user):
     }
 
 
-def test_wrong_password(auth_request):
+def test_wrong_password(jsonrpc_request):
     user = factories.UserFactory.create(raw_password='password')
 
-    resp = auth_request(
+    resp = jsonrpc_request(
         'login',
         {
             'credentials': {
@@ -40,6 +41,7 @@ def test_wrong_password(auth_request):
                 'password': 'wrong_password',
             },
         },
+        use_auth=False,
     )
 
     assert resp.get('error') == {
@@ -48,13 +50,13 @@ def test_wrong_password(auth_request):
     }
 
 
-def test_ok(auth_request, freezer, settings):
+def test_ok(jsonrpc_request, freezer, settings):
     now = dt.datetime.now()
 
     raw_password = 'test_password'
     user = factories.UserFactory.create(raw_password=raw_password)
 
-    resp = auth_request(
+    resp = jsonrpc_request(
         'login',
         {
             'credentials': {
@@ -62,10 +64,23 @@ def test_ok(auth_request, freezer, settings):
                 'password': raw_password,
             },
         },
+        use_auth=False,
     )
 
     assert resp.get('result') == {
         'token': IsStr,
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'patronymic': user.patronymic,
+            'department': {
+                'id': user.department.id,
+                'name': user.department.name,
+            },
+            'role': user.role,
+        }
     }, resp.get('error')
 
     token = resp['result'].get('token')

@@ -83,8 +83,9 @@ class LoginSchema(BaseModel):
     password: str = Field(..., title='Пароль в сыром виде')
 
 
-class UserTokenSchema(BaseModel):
+class LoginResponseSchema(BaseModel):
     token: str = Field(..., title='Токен', description='JWT-токен')
+    user: UserSchema = Field(..., title='Информация о пользователе')
 
 
 class ResumeForApplicantSchema(BaseModel):

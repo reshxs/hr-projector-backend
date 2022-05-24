@@ -12,12 +12,12 @@ pytestmark = [
 ]
 
 
-def test_register__ok(auth_request, department):
+def test_register__ok(jsonrpc_request, department):
     request = api_factories.StartRegistrationRequestFactory.create(
         department_id=department.id,
     )
 
-    response = auth_request(
+    response = jsonrpc_request(
         'register',
         {
             'user_data': request,
@@ -51,14 +51,14 @@ def test_register__ok(auth_request, department):
     assert user.role == models.UserRole.APPLICANT
 
 
-def test_register__user_already_exists(auth_request, department):
+def test_register__user_already_exists(jsonrpc_request, department):
     existing_user = factories.UserFactory.create()
     request = api_factories.StartRegistrationRequestFactory.create(
         email=existing_user.email,
         department_id=department.id,
     )
 
-    response = auth_request(
+    response = jsonrpc_request(
         'register',
         {
             'user_data': request,
@@ -69,14 +69,14 @@ def test_register__user_already_exists(auth_request, department):
     assert response.get('error') == {'code': 1001, 'message': 'User already exists'}
 
 
-def test_register__passwords_does_not_match(auth_request, department):
+def test_register__passwords_does_not_match(jsonrpc_request, department):
     request = api_factories.StartRegistrationRequestFactory.create(
         password='password1',
         password_confirmation='password2',
         department_id=department.id,
     )
 
-    response = auth_request(
+    response = jsonrpc_request(
         'register',
         {
             'user_data': request,
@@ -99,10 +99,10 @@ def test_register__passwords_does_not_match(auth_request, department):
     }
 
 
-def test_register__department_not_found(auth_request):
+def test_register__department_not_found(jsonrpc_request):
     request = api_factories.StartRegistrationRequestFactory.create()
 
-    response = auth_request(
+    response = jsonrpc_request(
         'register',
         {
             'user_data': request,
