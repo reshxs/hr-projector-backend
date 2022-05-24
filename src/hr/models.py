@@ -51,6 +51,7 @@ class User(AbstractBaseUser):
         max_length=25,
         choices=UserRole.choices,
         default=UserRole.APPLICANT,
+        verbose_name='Роль',
     )
 
     USERNAME_FIELD = 'email'
