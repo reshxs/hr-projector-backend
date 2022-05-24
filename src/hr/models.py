@@ -24,6 +24,9 @@ class Department(BaseModel):
 
     name = models.CharField('Название департамента', max_length=150)
 
+    def __str__(self):
+        return f'{self.name}({self.id})'
+
 
 class UserRole(models.TextChoices):
     APPLICANT = 'APPLICANT', 'соискатель'  #: тот, кто хочет поменять место работы
@@ -54,7 +57,10 @@ class User(AbstractBaseUser):
 
     @property
     def full_name(self):
-        return f'{self.last_name} {self.first_name} {self.patronymic}'.strip()
+        return f'{self.last_name} {self.first_name} {self.patronymic or ""}'.strip()
+
+    def __str__(self):
+        return f'{self.full_name} ({self.email})'
 
 
 class ResumeState(models.TextChoices):
