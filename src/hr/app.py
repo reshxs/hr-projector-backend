@@ -13,7 +13,6 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
-from hr.api.auth import api_v1 as auth_api_v1
 from hr.api.jsonrpc import api_v1 as jsonrpc_api_v1
 
 logger = logging.getLogger(__name__)
@@ -48,7 +47,6 @@ app.add_middleware(
 )
 
 app.bind_entrypoint(jsonrpc_api_v1)
-app.bind_entrypoint(auth_api_v1)
 
 
 @app.on_event('startup')
