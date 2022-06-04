@@ -70,6 +70,14 @@ class ResumeState(models.TextChoices):
     HIDDEN = 'HIDDEN', 'Скрыто'
 
 
+class Skill(BaseModel):
+    class Meta:
+        verbose_name = 'Навык'
+        verbose_name_plural = 'Навыки'
+
+    name = models.CharField(max_length=50, verbose_name='Название', unique=True)
+
+
 class Resume(BaseModel):
     class Meta:
         verbose_name = 'Резюме'
@@ -84,7 +92,16 @@ class Resume(BaseModel):
         choices=State.choices,
         default=State.DRAFT,
     )
-    content = models.TextField('Содержимое', null=True, blank=True)
+    current_position = models.CharField(max_length=50, verbose_name='Текущаая должность')
+    desired_position = models.CharField(
+        max_length=50,
+        verbose_name='Желаемая должность',
+        null=True,
+        blank=True,
+    )
+    skills = models.ManyToManyField(Skill, verbose_name='Навыки')
+    experience = models.PositiveIntegerField('Опыт работы', null=True, blank=True)
+    bio = models.TextField('Информация о себе', null=True, blank=True)
     created_at = models.DateTimeField('Дата/Время создания', auto_now_add=True)
     published_at = models.DateTimeField('Дата/Время публикации', null=True, blank=True)
 

@@ -32,14 +32,23 @@ class UserFactory(DjangoModelFactory):
         raw_password = 'password'
 
 
+class SkillFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Skill
+
+    name = factory.Faker('word')
+
+
 class ResumeFactory(DjangoModelFactory):
     class Meta:
         model = models.Resume
 
     user = factory.SubFactory(UserFactory)
     state = models.ResumeState.DRAFT
-    content = factory.Faker('sentence')
-    created_at = factory.LazyFunction(timezone.now)
+    current_position = factory.Faker('word')
+    desired_position = factory.Faker('word')
+    experience = None
+    bio = factory.Faker('sentence')
     published_at = None
 
     class Params:

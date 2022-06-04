@@ -88,10 +88,30 @@ class LoginResponseSchema(BaseModel):
     user: UserSchema = Field(..., title='Информация о пользователе')
 
 
+class CreateResumeSchema(BaseModel):
+    current_position: str = Field(..., title='Текущая должность')
+    desired_position: str | None = Field(None, title='Желаемая должность')
+    skills: list[str] | None = Field(None, title='Навыки')
+    experience: int | None = Field(None, title='Опыт работы')
+    bio: str | None = Field(None, title='Информация о себе')
+
+
+class UpdateResumeSchema(BaseModel):
+    current_position: str | None = Field(None, title='Текущая должность')
+    desired_position: str | None = Field(None, title='Желаемая должноть')
+    skills: list[str] | None = Field(None, title='Навыки')
+    experience: int | None = Field(None, title='Опыт работы')
+    bio: str | None = Field(None, title='Информация о себе')
+
+
 class ResumeForApplicantSchema(BaseModel):
     id: int = Field(..., title='ID')
     state: models.ResumeState = Field(..., title='Состояние')
-    content: str = Field(..., title='Содержимое')
+    current_position: str = Field(..., title='Текущая должность')
+    desired_position: str | None = Field(None, title='Желаемая должность')
+    skills: list[str] | None = Field(None, title='Навыки')
+    experience: int | None = Field(None, title='Опыт работы')
+    bio: str | None = Field(None, title='Информация о себе')
     created_at: dt.datetime = Field(..., title='Дата/Время создания')
     published_at: dt.datetime | None = Field(
         None,
@@ -103,7 +123,11 @@ class ResumeForApplicantSchema(BaseModel):
         return cls(
             id=resume.id,
             state=resume.state,
-            content=resume.content,
+            current_position=resume.current_position,
+            desired_position=resume.desired_position,
+            skills=[skill.name for skill in resume.skills.all()],
+            experience=resume.experience,
+            bio=resume.bio,
             created_at=resume.created_at,
             published_at=resume.published_at,
         )

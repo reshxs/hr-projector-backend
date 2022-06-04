@@ -10,6 +10,9 @@ pytestmark = [
 
 def test_get_resume_for_applicant__ok(jsonrpc_request, user):
     resume = factories.ResumeFactory.create(user=user)
+    skill = factories.SkillFactory.create()
+    resume.skills.add(skill)
+    resume.save()
 
     resp = jsonrpc_request(
         'get_resume_for_applicant',
@@ -21,7 +24,11 @@ def test_get_resume_for_applicant__ok(jsonrpc_request, user):
     assert resp.get('result') == {
         'id': resume.id,
         'state': resume.state.value,
-        'content': resume.content,
+        'current_position': resume.current_position,
+        'desired_position': resume.desired_position,
+        'skills': [skill.name],
+        'experience': resume.experience,
+        'bio': resume.bio,
         'created_at': resume.created_at.isoformat(),
         'published_at': resume.published_at,
     }, resp.get('error')
