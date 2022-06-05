@@ -462,3 +462,19 @@ class VacancyFiltersForApplicant(BaseModel):
         example='2022-05-10',
         alias='published_gte',
     )
+
+
+class VacancyResponseSchema(BaseModel):
+    id: int = Field(..., title='ID отклика на вакансию')
+    vacancy: VacancyForApplicantSchema = Field(..., title='Вакансия')
+    resume: ResumeForManagerSchema = Field(..., title='Резюме')
+    applicant_message: str | None = Field(None, title='Сопроводительное письмо')
+
+    @classmethod
+    def from_model(cls, vacancy_response: models.VacancyResponse):
+        return cls(
+            id=vacancy_response.id,
+            vacancy=VacancyForApplicantSchema.from_model(vacancy_response.vacancy),
+            resume=ResumeForManagerSchema.from_model(vacancy_response.resume),
+            applicant_message=vacancy_response.applicant_message,
+        )

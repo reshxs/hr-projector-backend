@@ -34,3 +34,8 @@ class VacancyNotFound(BaseError):
 class VacancyWrongState(BaseError):
     CODE = 4002
     MESSAGE = 'Vacancy has not allowed state for this method'
+
+
+class VacancyResponseAlreadyExists(BaseError):
+    CODE = 5003
+    MESSAGE = 'Vacancy response already exists'
