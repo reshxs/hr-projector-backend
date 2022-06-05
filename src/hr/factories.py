@@ -86,3 +86,13 @@ class VacancyFactory(DjangoModelFactory):
             state=models.VacancyState.HIDDEN,
             published_at=None,
         )
+
+
+class VacancyResponseFactory(DjangoModelFactory):
+    class Meta:
+        model = models.VacancyResponse
+
+    vacancy = factory.SubFactory(VacancyFactory, published=True)
+    resume = factory.SubFactory(ResumeFactory, published=True)
+    applicant_message = factory.Faker('sentence')
+
