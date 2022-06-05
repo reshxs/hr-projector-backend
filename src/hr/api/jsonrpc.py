@@ -669,3 +669,23 @@ def get_resumes_for_manager(
 
     paginator = TypedPaginator(schemas.ResumeForManagerSchema, query)
     return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Получить список откликов на вакансию для менеджера',
+)
+def get_vacancy_responses_for_manager(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
+) -> PaginatedResponse[schemas.VacancyResponseSchema]:
+    query = models.VacancyResponse.objects.filter(
+        vacancy__creator__department_id=user.department_id,
+    ).select_related(
+        'vacancy', 'vacancy__creator', 'resume', 'resume__user',
+    )
+
+    paginator = TypedPaginator(schemas.VacancyResponseSchema, query)
+    return paginator.get_response(any_pagination)
