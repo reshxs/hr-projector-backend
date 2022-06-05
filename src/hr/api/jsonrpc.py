@@ -389,6 +389,56 @@ def get_vacancies_for_applicant(
     return paginator.get_response(any_pagination)
 
 
+@api_v1.method(
+    tags=['applicant'],
+    summary='Откликнуться на вакансию',
+    errors=[
+        errors.VacancyNotFound,
+        errors.ResumeNotFound,
+        errors.ResumeWrongState,
+    ]
+)
+@transaction.atomic
+def respond_vacancy(
+    user: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.APPLICANT]),
+    ),
+    vacancy_id: int = Body(..., title='ID вакансии'),
+    resume_id: int = Body(..., title='ID резюме'),
+    message: str | None = Body(None, title='Сопроводительное письмо'),
+) -> schemas.VacancyResponseSchema:
+    vacancy = models.Vacancy.objects.get_or_none(
+        id=vacancy_id,
+        state=models.VacancyState.PUBLISHED,
+    )
+    if vacancy is None:
+        raise errors.VacancyNotFound
+
+    resume = models.Resume.objects.get_or_none(
+        id=resume_id,
+        user_id=user.id,
+    )
+
+    if resume is None:
+        raise errors.ResumeNotFound
+
+    if resume.state != models.ResumeState.PUBLISHED:
+        raise errors.ResumeWrongState
+
+    vacancy_response, created = models.VacancyResponse.objects.get_or_create(
+        vacancy=vacancy,
+        resume=resume,
+        defaults={
+            'applicant_message': message,
+        },
+    )
+
+    if not created:
+        raise errors.VacancyResponseAlreadyExists
+
+    return schemas.VacancyResponseSchema.from_model(vacancy_response)
+
+
 # МЕТОДЫ ДЛЯ МЕНЕДЖЕРА
 
 

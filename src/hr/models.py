@@ -143,3 +143,15 @@ class Vacancy(BaseModel):
 
     created_at = models.DateTimeField('Дата/Время создания', auto_now=True)
     published_at = models.DateTimeField('Дата/Время публикации', null=True, blank=True)
+
+
+class VacancyResponse(BaseModel):
+    class Meta:
+        verbose_name = 'отклик на вакансию'
+        verbose_name_plural = 'отклики на вакансию'
+
+    vacancy = models.ForeignKey(Vacancy, on_delete=models.RESTRICT)
+    resume = models.ForeignKey(Resume, on_delete=models.RESTRICT)
+    applicant_message = models.TextField('Сопроводительное письмо', null=True, blank=True,)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+
