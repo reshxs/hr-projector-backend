@@ -52,8 +52,7 @@ def test_token_expired(freezer, settings, jsonrpc_request, user):
 
 def test_ok(jsonrpc_request, user, user_token):
     resp = jsonrpc_request(
-        'create_resume',
-        {'content': 'content'},
+        'get_resumes_for_applicant',
         auth_token=user_token,
     )
     assert resp.get('error') is None

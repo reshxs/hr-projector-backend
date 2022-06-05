@@ -28,7 +28,11 @@ def test_ok(jsonrpc_request, freezer, user):
     assert resp.get('result') == {
         'id': resume.id,
         'state': 'HIDDEN',
-        'content': resume.content,
+        'current_position': resume.current_position,
+        'desired_position': resume.desired_position,
+        'skills': [],
+        'experience': resume.experience,
+        'bio': resume.bio,
         'created_at': resume.created_at.isoformat(),
         'published_at': None,
     }, resp.get('error')

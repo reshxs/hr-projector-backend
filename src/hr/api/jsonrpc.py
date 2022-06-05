@@ -108,18 +108,34 @@ def get_departments() -> list[schemas.DepartmentSchema]:
     tags=['applicant'],
     summary='Добавить резюме',
 )
+@transaction.atomic
 def create_resume(
     user: models.User = Depends(
         UserGetter(
             allowed_roles=[models.UserRole.APPLICANT],
         ),
     ),
-    content: str = Body(..., title='Содержимое резюме'),
+    content: schemas.CreateResumeSchema = Body(..., title='Содержимое резюме'),
 ) -> schemas.ResumeForApplicantSchema:
     resume = models.Resume.objects.create(
         user=user,
-        content=content,
+        current_position=content.current_position,
+        desired_position=content.desired_position,
+        experience=content.experience,
+        bio=content.bio,
     )
+
+    skills_to_create = [
+        models.Skill(name=skill_name.lower())
+        for skill_name in content.skills
+    ]
+    models.Skill.objects.bulk_create(skills_to_create, ignore_conflicts=True)
+
+    skills = models.Skill.objects.filter(name__in=content.skills)
+    assert len(skills) == len(content.skills)
+
+    resume.skills.set(skills)
+    resume.save()
 
     return schemas.ResumeForApplicantSchema.from_model(resume)
 
@@ -267,7 +283,7 @@ def update_resume(
         UserGetter(allowed_roles=[models.UserRole.APPLICANT, ]),
     ),
     resume_id: int = Body(..., title='ID резюме', alias='id'),
-    new_content: str = Body(..., title='Данные для обновления'),
+    content: schemas.UpdateResumeSchema = Body(..., title='Данные для обновления'),
 ) -> schemas.ResumeForApplicantSchema:
     with transaction.atomic():
         resume = (
@@ -287,8 +303,29 @@ def update_resume(
         if resume.state != models.ResumeState.DRAFT:
             raise errors.ResumeWrongState
 
-        resume.content = new_content
-        resume.save(update_fields=('content',))
+        data_to_update = content.dict(exclude_none=True)
+
+        if 'skills' in data_to_update:
+            skill_names = data_to_update.pop('skills')
+            skills = [
+                models.Skill(name=skill_name)
+                for skill_name in skill_names
+            ]
+            models.Skill.objects.bulk_create(skills, ignore_conflicts=True)
+            skills = models.Skill.objects.filter(name__in=skill_names)
+            resume.skills.set(skills)
+
+        for key, value in data_to_update.items():
+            setattr(resume, key, value)
+
+        resume.save(
+            update_fields=(
+                'current_position',
+                'desired_position',
+                'experience',
+                'bio',
+            ),
+        )
 
     return schemas.ResumeForApplicantSchema.from_model(resume)
 

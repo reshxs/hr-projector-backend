@@ -23,7 +23,11 @@ def test_return_only_users_resumes(jsonrpc_request, user):
             {
                 'id': resume.id,
                 'state': resume.state.value,
-                'content': resume.content,
+                'current_position': resume.current_position,
+                'desired_position': resume.desired_position,
+                'skills': [],
+                'experience': resume.experience,
+                'bio': resume.bio,
                 'created_at': resume.created_at.isoformat(),
                 'published_at': resume.published_at,
             }
@@ -48,13 +52,9 @@ def test_filter_by_id(jsonrpc_request, user):
 
     assert resp.get('result') == IsListOrTuple(
         *[
-            {
-                'id': resume.id,
-                'state': resume.state.value,
-                'content': resume.content,
-                'created_at': resume.created_at.isoformat(),
-                'published_at': resume.published_at,
-            }
+            IsPartialDict(
+                {'id': resume.id}
+            )
             for resume in expected_resumes
         ],
         check_order=False,
