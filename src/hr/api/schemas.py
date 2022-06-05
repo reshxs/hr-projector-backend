@@ -88,6 +88,56 @@ class LoginResponseSchema(BaseModel):
     user: UserSchema = Field(..., title='Информация о пользователе')
 
 
+class ShortApplicantSchema(BaseModel):
+    id: int = Field(..., title='Идентификатор пользователя')
+    email: EmailStr = Field(..., title='Email')
+    full_name: str = Field(..., title='ФИО')
+    department: DepartmentSchema = Field(..., title='Департамент')
+
+    @classmethod
+    def from_model(cls, user: models.User):
+
+        return cls(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            department=DepartmentSchema.from_model(user.department),
+        )
+
+
+class ApplicantFilters(BaseModel):
+    email__icontains: constr(min_length=1) | None = Field(
+        None,
+        title='Поиск по email',
+        description='Вернет всех соискателей, email которых содержит переданную строчку',
+        alias='email',
+    )
+    # TODO: повестить индекс!
+    full_name_search: constr(min_length=1) | None = Field(
+        None,
+        title='Поиск по ФИО',
+        description='Вернет всех соискателей, ФИО которых содержит переданную строку',
+        alias='full_name',
+    )
+    department_id__in: conlist(int, min_items=1) | None = Field(
+        None,
+        title='Фильтрация по департаменту',
+        description='Вернет всех соискателей, департамент которых соответствует одному их переданных',
+        alias='department_ids',
+    )
+
+    def filter_query(self, query: models.QuerySet):
+        return (
+            query
+            .annotate(
+                full_name_search=SearchVector('first_name', 'last_name', 'patronymic'),
+            )
+            .filter(
+                **self.dict(exclude_none=True),
+            )
+        )
+
+
 class CreateResumeSchema(BaseModel):
     current_position: str = Field(..., title='Текущая должность')
     desired_position: str | None = Field(None, title='Желаемая должность')
@@ -146,6 +196,84 @@ class ResumeFiltersForApplicant(BaseModel):
         description='Возвращает резюме по переданному списку ID',
         alias='ids',
     )
+
+
+class ResumeForManagerSchema(BaseModel):
+    id: int = Field(..., title='ID резюме')
+    applicant: ShortApplicantSchema = Field(..., title='Соискатель')
+    current_position: str = Field(..., title='Текущаяя должность')
+    desired_position: str | None = Field(None, title='Желаемая должность')
+    skills: list[str] = Field(..., title='Ключевые навыки')
+    experience: int | None = Field(None, title='Опыт работы')
+    bio: str | None = Field(None, title='Информация о себе')
+
+    @classmethod
+    def from_model(cls, resume: models.Resume):
+        skills = [skill.name for skill in resume.skills.all()]
+        return cls(
+            id=resume.id,
+            applicant=ShortApplicantSchema.from_model(resume.user),
+            current_position=resume.current_position,
+            desired_position=resume.desired_position,
+            skills=skills,
+            experience=resume.experience,
+            bio=resume.bio,
+        )
+
+
+class ResumeFiltersForManager(BaseModel):
+    user__email__icontains: constr(min_length=1) | None = Field(
+        None,
+        title='Поиск по email соискателя',
+        description='Вернет резюме всех соискателей, email которых содержит переданную строчку',
+        alias='email',
+    )
+    # TODO: повестить индекс!
+    full_name_search: constr(min_length=1) | None = Field(
+        None,
+        title='Поиск по ФИО соискателя',
+        description='Вернет резюме всех соискателей, ФИО которых содержит переданную строку',
+        alias='full_name',
+    )
+    user__department_id__in: conlist(int, min_items=1) | None = Field(
+        None,
+        title='Фильтрация по департаменту соискателя',
+        description='Вернет резюме всех соискателей, департамент которых соответствует одному их переданных',
+        alias='department_ids',
+    )
+    current_position__icontains: str | None = Field(
+        None,
+        title='Поиск по текущей должности',
+        alias='current_position',
+    )
+    desired_position__icontains: str | None = Field(
+        None,
+        title='Поиск по желаемой должности',
+        alias='desired_position',
+    )
+    experience__gte: int | None = Field(
+        None,
+        title='Фидьтрация по опыту работы',
+        description='Вернет все резюме, указанный опыт в которых больше или равен переданному значению',
+        alias='experience_gte',
+    )
+    # TODO: добавить фильтрацию по ключевым навыкам
+
+    @staticmethod
+    def _annotate_query(query: models.QuerySet):
+        return query.annotate(
+            full_name_search=SearchVector(
+                'user__first_name',
+                'user__last_name',
+                'user__patronymic'
+            ),
+        )
+
+    def filter_query(self, query: models.QuerySet):
+        query = self._annotate_query(query)
+        return query.filter(
+            **self.dict(exclude_none=True),
+        )
 
 
 class CreateVacancySchema(BaseModel):
@@ -334,66 +462,3 @@ class VacancyFiltersForApplicant(BaseModel):
         example='2022-05-10',
         alias='published_gte',
     )
-
-
-class ResumeForManagerSchema(BaseModel):
-    id: int = Field(..., title='ID')
-    content: str = Field(..., title='Содержимое')
-    published_at: dt.datetime = Field(
-        ...,
-        title='Дата/Время публикации',
-    )
-
-    @classmethod
-    def from_model(cls, resume: models.Resume):
-        pass
-
-
-class ShortApplicantSchema(BaseModel):
-    id: int = Field(..., title='Идентификатор пользователя')
-    email: EmailStr = Field(..., title='Email')
-    full_name: str = Field(..., title='ФИО')
-    department: DepartmentSchema = Field(..., title='Департамент')
-
-    @classmethod
-    def from_model(cls, user: models.User):
-
-        return cls(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            department=DepartmentSchema.from_model(user.department),
-        )
-
-
-class ApplicantFilters(BaseModel):
-    email__icontains: constr(min_length=1) | None = Field(
-        None,
-        title='Поиск по email',
-        description='Вернет всех соискателей, email которых содержит переданную строчку',
-        alias='email',
-    )
-    # TODO: повестить индекс!
-    full_name_search: constr(min_length=1) | None = Field(
-        None,
-        title='Поиск по ФИО',
-        description='Вернет всех соискателей, ФИО которых содержит переданную строку',
-        alias='full_name',
-    )
-    department_id__in: conlist(int, min_items=1) | None = Field(
-        None,
-        title='Фильтрация по департаменту',
-        description='Вернет всех соискателей, департамент которых соответствует одному их переданных',
-        alias='department_ids',
-    )
-
-    def filter_query(self, query: models.QuerySet):
-        return (
-            query
-            .annotate(
-                full_name_search=SearchVector('first_name', 'last_name', 'patronymic'),
-            )
-            .filter(
-                **self.dict(exclude_none=True),
-            )
-        )

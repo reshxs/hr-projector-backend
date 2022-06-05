@@ -56,6 +56,10 @@ class ResumeFactory(DjangoModelFactory):
             state=models.ResumeState.PUBLISHED,
             published_at=factory.LazyFunction(timezone.now),
         )
+        hidden = factory.Trait(
+            state=models.ResumeState.HIDDEN,
+            published_at=None,
+        )
 
 
 class VacancyFactory(DjangoModelFactory):

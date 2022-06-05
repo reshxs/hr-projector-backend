@@ -595,3 +595,27 @@ def get_applicants_for_manager(
 
     paginator = TypedPaginator(schemas.ShortApplicantSchema, query)
     return paginator.get_response(any_pagination)
+
+
+@api_v1.method(
+    tags=['manager'],
+    summary='Получить список резюме для менеджера',
+)
+def get_resumes_for_manager(
+    _: models.User = Depends(
+        UserGetter(allowed_roles=[models.UserRole.MANAGER]),
+    ),
+    any_pagination: AnyPagination = Depends(get_mutual_exclusive_pagination),
+    filterer: schemas.ResumeFiltersForManager | None = Body(None, title='Фильтры', alias='filters'),
+) -> PaginatedResponse[schemas.ResumeForManagerSchema]:
+    query = models.Resume.objects.filter(
+        state__exact=models.ResumeState.PUBLISHED,
+    ).select_related(
+        'user',
+    ).order_by('-published_at')
+
+    if filterer is not None:
+        query = filterer.filter_query(query)
+
+    paginator = TypedPaginator(schemas.ResumeForManagerSchema, query)
+    return paginator.get_response(any_pagination)
